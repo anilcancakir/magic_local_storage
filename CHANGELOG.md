@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-15
+
 ### Fixed
 
 - Saving a `useLocal` model, or calling `insert` or `update`, on a table that does not exist yet now throws a `StateError` naming the table instead of reporting success, so `save()` returns `false` before the migration ran; a table created later is seen without a restart.
