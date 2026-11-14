@@ -144,12 +144,21 @@ class DatabaseManager {
   }
 
   /// Clear the schema cache for a specific table or all tables.
+  ///
+  /// A [table] clears every entry naming the same bare table, so `users`
+  /// also clears `main.users` and the reverse. Entries for a same-named table
+  /// in another attached schema are cleared too, which only costs a re-read.
   void clearSchemaCache([String? table]) {
-    if (table != null) {
-      _schemaCache.remove(table);
-    } else {
+    if (table == null) {
       _schemaCache.clear();
+
+      return;
     }
+
+    final String bare = resultKey(table);
+    _schemaCache.removeWhere(
+      (key, _) => key == table || resultKey(key) == bare,
+    );
   }
 
   /// Close the database connection.

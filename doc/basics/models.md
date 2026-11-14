@@ -83,7 +83,7 @@ Core defines the contract, `LocalModelStore`, and resolves it from the container
 | `delete(table, primaryKey, id)` | Removes the row. |
 | `upsert(table, primaryKey, id, data)` | Updates the row when it exists, inserts otherwise; used for rows pulled from the remote side. |
 
-`QueryModelStore` runs these through `QueryBuilder`. Writes keep only the attributes the table has a column for, so a model may carry a computed or remote-only attribute without breaking the insert. A write to a table that does not exist throws a `StateError` naming it, which core's `save()` reports as `false`. Booleans, dates and maps are stored as described in [Queries](./queries.md), and the model's `casts` restore them when a row is hydrated.
+`QueryModelStore` runs these through `QueryBuilder`. Writes keep only the attributes the table has a column for, so a model may carry a computed or remote-only attribute without breaking the insert. An `insert` or `update` on a table that does not exist throws a `StateError` naming it, which core's `save()` reports as `false`; a `delete` there fails with SQLite's own `no such table` error instead. Booleans, dates and maps are stored as described in [Queries](./queries.md), and the model's `casts` restore them when a row is hydrated.
 
 <a name="without-the-plugin"></a>
 ## Without the Plugin

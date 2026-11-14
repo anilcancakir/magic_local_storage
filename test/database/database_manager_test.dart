@@ -23,6 +23,28 @@ void main() {
       expect(await DatabaseManager().getColumns('later'), ['id', 'title']);
     });
 
+    test('a schema change reaches the schema-qualified cache entry', () async {
+      db.execute('CREATE TABLE users (id INTEGER PRIMARY KEY)');
+      expect(await DatabaseManager().getColumns('main.users'), ['id']);
+
+      Schema.table('users', (table) {
+        table.string('name').nullable();
+      });
+      await DB.table('main.users').insert({'name': 'Ada'});
+
+      expect(db.select('SELECT name FROM users').single['name'], 'Ada');
+    });
+
+    test('clearing a qualified name clears the plain entry too', () async {
+      db.execute('CREATE TABLE users (id INTEGER PRIMARY KEY)');
+      expect(await DatabaseManager().getColumns('users'), ['id']);
+
+      db.execute('ALTER TABLE users ADD COLUMN name TEXT');
+      DatabaseManager().clearSchemaCache('main.users');
+
+      expect(await DatabaseManager().getColumns('users'), ['id', 'name']);
+    });
+
     test('reads the columns of a keyword-named table', () async {
       db.execute('CREATE TABLE "order" ("group" INTEGER)');
 

@@ -75,11 +75,11 @@ void main() {
 | `where(column, value)`, `where(column, operator, value)` | An `AND` condition; two arguments mean `=`. |
 | `whereNull(column)`, `whereNotNull(column)` | `IS NULL` and `IS NOT NULL`. |
 | `orderBy(column, [direction])` | `asc` by default, `asc` or `desc` in any case; repeat for a second sort key. |
+| `limit(count)`, `offset(count)` | Paging. |
 
 `where` accepts the operators `=`, `==`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `glob`, `not glob`, `match`, `is` and `is not`, in any case; any other operator, `in` included, throws an `ArgumentError`, and so does an `orderBy` direction other than `asc` or `desc`. A `null` value becomes `IS NULL` with `=`, `==` or `is` (and in the two-argument form) and `IS NOT NULL` with `!=`, `<>` or `is not`; with any other operator it throws an `ArgumentError`.
 
 A plain name, letters, digits and underscores with optional dotted parts (`order`, `users.id`, `cache.items`), is quoted as an identifier wherever the builder takes a table or column: `table`, `where`, `whereNull`, `whereNotNull`, `orderBy`, `value`, `pluck`, `insert` and `update`. So a keyword column such as `order` or `group` works, and `value('order')` and `pluck('order')` read it back under its bare name. Anything else is written exactly as given, so an expression keeps working: `orderBy('name COLLATE NOCASE')`, `orderBy('RANDOM()')`, `where('lower(email)', email)`, `where('date(created_at)', '>=', day)` and `json_extract(data, '$.a')`; a hand-quoted `'"order"'` stays as written. `select([...])` entries are always raw SQL, so an expression such as `COUNT(*) AS total` works there and a keyword column has to be quoted by hand: `select(['"order"'])`.
-| `limit(count)`, `offset(count)` | Paging. |
 
 | Terminal | Returns | Meaning |
 |:---------|:--------|:--------|
