@@ -77,7 +77,7 @@ name: test_app
 dependencies:
   flutter:
     sdk: flutter
-  magic_local_storage: ^0.0.1
+  magic_local_storage: ^1.0.0
 ''');
 
     Directory(at('.dart_tool')).createSync(recursive: true);

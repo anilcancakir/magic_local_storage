@@ -29,7 +29,7 @@ Magic core no longer carries the SQLite layer. A model with `useLocal => true` n
 |:------------|:------|
 | Dart | `>=3.13.0` |
 | Flutter | `>=3.47.0` |
-| Magic | `^0.1.0`, installed and bootstrapped (`lib/config/app.dart` exists) |
+| Magic | `^1.0.0`, installed and bootstrapped (`lib/config/app.dart` exists) |
 | Native | Android, iOS, macOS, Windows and Linux through `sqlite3` FFI, no setup |
 | Web | `web/sqlite3.wasm`, downloaded by the installer, see [Web Setup](#web-setup) |
 

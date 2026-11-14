@@ -33,7 +33,7 @@
 | Entry points | `DB` and `Schema` (facades), `DatabaseServiceProvider` (wiring), `databaseConfig` (config factory), `Migration` and `Migrator`, `Seeder`, `Factory` and `Seeding.run`, `SyncFeed` and `SyncLedger`, `QueryModelStore` |
 | Generators | `make:migration`, `make:seeder`, `make:factory`, `local_storage:install` |
 | Platforms | Android, iOS, macOS, Windows, Linux and web |
-| Requires | Dart >=3.13, Flutter >=3.47, `magic` ^0.1.0; web needs `web/sqlite3.wasm`, which the installer downloads |
+| Requires | Dart >=3.13, Flutter >=3.47, `magic` ^1.0.0; web needs `web/sqlite3.wasm`, which the installer downloads |
 | Dependencies | `magic`, `sqlite3`, `path_provider`, `path`, `faker`; dowel runs the installer |
 | License | MIT |
 
@@ -46,7 +46,7 @@ dart run magic:dowel plugin:install magic_local_storage
 
 The installer adds `DatabaseServiceProvider` to the `providers` list of `lib/config/app.dart` and `() => databaseConfig` to the `configFactories` of `lib/main.dart`, then chains `local_storage:install`, which downloads `web/sqlite3.wasm` (release `sqlite3-3.9.1`) when the project has a `web/` folder. No config file is published.
 
-Core `magic` 0.1.0 no longer carries SQLite. A model with `useLocal => true` needs this package: without it the first `find`, `all`, `save`, `delete` or `refresh` throws a `StateError` naming `magic_local_storage`.
+Core `magic` 1.0.0 no longer carries SQLite. A model with `useLocal => true` needs this package: without it the first `find`, `all`, `save`, `delete` or `refresh` throws a `StateError` naming `magic_local_storage`.
 
 ## Schema and migrations
 

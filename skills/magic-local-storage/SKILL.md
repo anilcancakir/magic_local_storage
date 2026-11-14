@@ -1,7 +1,7 @@
 ---
 name: magic-local-storage
 description: "Store data locally in a Magic app with SQLite: DB and Schema facades, migrations, seeders, factories, the useLocal model store and SyncFeed."
-version: 0.0.1
+version: 1.0.0
 when_to_use: "Use when code imports package:magic_local_storage or touches DB, Schema, Migration, Migrator, Seeding.run, Factory, SyncFeed, DatabaseServiceProvider or a useLocal model in a Magic app."
 ---
 
@@ -18,7 +18,7 @@ flutter pub add magic_local_storage
 dart run magic:dowel plugin:install magic_local_storage
 ```
 
-Requires Dart >=3.13, Flutter >=3.47 and `magic` ^0.1.0. The installer adds `DatabaseServiceProvider` to `lib/config/app.dart` and `() => databaseConfig` to the `configFactories` of `lib/main.dart`, then chains `local_storage:install`, which downloads `web/sqlite3.wasm` for a project with a `web/` folder. It publishes no config. Import only `package:magic_local_storage/magic_local_storage.dart`.
+Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. The installer adds `DatabaseServiceProvider` to `lib/config/app.dart` and `() => databaseConfig` to the `configFactories` of `lib/main.dart`, then chains `local_storage:install`, which downloads `web/sqlite3.wasm` for a project with a `web/` folder. It publishes no config. Import only `package:magic_local_storage/magic_local_storage.dart`.
 
 ## Model rules
 
