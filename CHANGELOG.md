@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- The documentation and the agent skill now match the code: a write to a table that does not exist throws a `StateError` (so `save()` returns `false` on a local-only model and `Factory.create()` throws) rather than dropping every attribute or answering `0`; with `useLocal` and `useRemote` both on, `find` falls back to the API on a miss and `all` only when the local read throws; `SyncFeed.run` logs only a thrown exception, not a refused HTTP response; the testing guide no longer lists `Http.unfake()` among the statics a container reset leaves; and the web wasm path `/sqlite3.wasm` needs the app served from the site root.
+- The documentation and the agent skill now match the code: a write to a table that does not exist throws a `StateError` (so `save()` returns `false` on a local-only model and `Factory.create()` throws) rather than dropping every attribute or answering `0`; with `useLocal` and `useRemote` both on, `find` falls back to the API on a miss and `all` only when the local read throws; `SyncFeed.run` logs only a thrown exception, not a refused HTTP response; the testing guide no longer lists `Http.unfake()` among the statics a container reset leaves; and the web wasm is always requested at the origin root `/sqlite3.wasm`, so an app served from a sub-path must still serve the file there.
 - The agent skill listing is shorter.
 
 ### Changed

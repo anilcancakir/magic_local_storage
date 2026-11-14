@@ -253,7 +253,7 @@ A method declared on `PostFactory` itself would be unreachable after the first `
 | `Factory.create()` on a model without `InteractsWithPersistence` | The factory calls `save()` dynamically; add the mixin or use `make()`. |
 | Naming a state method on the factory subclass | Declare it as an extension on `Factory<T>`; the subclass method is lost after `count()`. |
 | Expecting `create()` to return one model | It returns a list; take `.first` for a single model. |
-| Seeding before the migrations | Run `Migrator().run` first; a missing table makes the store throw a `StateError`, `save()` answers `false` and `create()` throws a `StateError`. |
+| Seeding before the migrations | Run `Migrator().run` first; a missing table makes the store throw a `StateError`; on a local-only model `save()` answers `false` and `create()` throws a `StateError`. With `useRemote` on and a successful remote write `save()` still answers `true`. |
 
 <a name="related-documentation"></a>
 ## Related Documentation
