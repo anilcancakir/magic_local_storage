@@ -37,8 +37,10 @@ The file name carries a 14-digit timestamp so files sort in run order. The class
 | Option | Effect |
 |:-------|:-------|
 | `--create=<table>`, `-c` | Uses the stub with a `Schema.create` body, `id()` and `timestamps()`; the table name is the value. |
-| `--table=<table>`, `-t` | Writes the empty skeleton. The skeleton has no table placeholder, so add the `Schema.table` call yourself. |
-| neither | The same empty skeleton. |
+| `--table=<table>`, `-t` | Writes the skeleton: an empty `up()` and a `down()` that throws `UnsupportedError('<name> has no rollback yet.')`. The skeleton has no table placeholder, so add the `Schema.table` call yourself and replace the throw with the reverse statements. |
+| neither | The same skeleton. |
+
+A name with a `..` or `.` segment, an empty segment (a leading, trailing or doubled `/`), a backslash or a colon is refused with exit code `1` before anything is written, by all three generators; a nested name such as `admin/create_reports_table` stays inside the default directory.
 
 The generator does not register the migration: add it to your `Migrator().run([...])` list, see [Migrations](../basics/migrations.md#running-migrations).
 

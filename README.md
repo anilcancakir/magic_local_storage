@@ -44,7 +44,7 @@ flutter pub add magic_local_storage
 dart run magic:dowel plugin:install magic_local_storage
 ```
 
-The installer adds `DatabaseServiceProvider` to the `providers` list of `lib/config/app.dart` and `() => databaseConfig` to the `configFactories` of `lib/main.dart`, then chains `local_storage:install`, which downloads `web/sqlite3.wasm` (release `sqlite3-3.9.1`) when the project has a `web/` folder. No config file is published.
+The installer adds `DatabaseServiceProvider` to the `providers` list of `lib/config/app.dart` and `() => databaseConfig` to the `configFactories` of `lib/main.dart`, then chains `local_storage:install`, which downloads `web/sqlite3.wasm` (the release of the `sqlite3` version your project resolved) when the project has a `web/` folder. No config file is published.
 
 Core `magic` 1.0.0 no longer carries SQLite. A model with `useLocal => true` needs this package: without it the first `find`, `all`, `save`, `delete` or `refresh` throws a `StateError` naming `magic_local_storage`.
 
@@ -113,7 +113,7 @@ Future<void> main() async {
 | `DB.transaction(callback)` | One transaction; rolls back when the callback throws. |
 | `Schema.create`, `Schema.table`, `Schema.drop`, `Schema.dropIfExists`, `Schema.rename` | Table changes. |
 
-Writes keep only the keys the table has a column for, so a stray attribute never fails an insert.
+Writes keep only the keys the table has a column for, so a stray attribute never fails an insert; a write to a table that does not exist yet throws a `StateError` naming it. Table and column names are quoted, so a column called `order` works; `select([...])` entries stay raw SQL.
 
 ## Models
 
@@ -255,8 +255,8 @@ Rules for an agent writing code against this package. Each one is a mistake that
 | Never call `DB.commit()` or `DB.rollback()` in a migration or inside `DB.transaction` | The run or the block owns the transaction; `run` and `transaction` throw a `StateError` naming the mistake. |
 | Pass every migration to `Migrator().run`, in order | There is no discovery, so an unlisted migration never runs. |
 | Call `Seeding.run([...])` for seeders | `Magic.seed` is gone from core. |
-| Use `whereNull`, never `where(column, null)` | A null value compiles to `= NULL`, which matches nothing. |
-| Never put user input in a table, column or order direction | Only values are bound; names are interpolated into the SQL. |
+| Prefer `whereNull` and `whereNotNull` for null checks | `where(column, null)` also compiles to `IS NULL`, but `where(column, '>', null)` throws an `ArgumentError`. |
+| Never put user input in a table, column, `select` entry, operator or order direction | Only values are bound. Names are quoted but still choose what is read; `select` entries are raw SQL; an operator outside the supported list or a direction other than `asc`/`desc` throws an `ArgumentError`. |
 | Set a new connection in `setUp` and call `DatabaseManager().dispose()` in `tearDown` | The manager is a singleton that `Magic.flush()` does not clear. |
 
 ## Dependencies

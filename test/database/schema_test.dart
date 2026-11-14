@@ -60,6 +60,38 @@ void main() {
       expect(await Schema.hasColumn('users', 'email'), isFalse);
     });
 
+    test('creates, alters and drops keyword-named tables and columns', () {
+      Schema.create('order', (table) {
+        table.id();
+        table.integer('group');
+        table.string('index').defaultValue("Ada's");
+      });
+
+      db.execute('INSERT INTO "order" ("group") VALUES (7)');
+      expect(db.select('SELECT "index" FROM "order"').first['index'], "Ada's");
+
+      Schema.table('order', (table) {
+        table.string('select').nullable();
+        table.renameColumn('group', 'where');
+        table.dropColumn('index');
+      });
+      final columns = db
+          .select('PRAGMA table_info("order")')
+          .map((row) => row['name'])
+          .toList();
+      expect(columns, ['id', 'where', 'select']);
+
+      Schema.rename('order', 'table');
+      expect(db.select('SELECT "where" FROM "table"').first['where'], 7);
+
+      Schema.drop('table');
+      Schema.dropIfExists('table');
+      expect(
+        db.select("SELECT name FROM sqlite_master WHERE type = 'table'"),
+        isNot(contains(containsPair('name', 'table'))),
+      );
+    });
+
     test('checks if table has table', () async {
       db.execute('CREATE TABLE users (id INTEGER, name TEXT)');
 

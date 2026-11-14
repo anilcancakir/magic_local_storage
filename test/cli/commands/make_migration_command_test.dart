@@ -114,6 +114,44 @@ void main() {
       expect(content, isNot(contains('Future<void>')));
     });
 
+    test('the plain skeleton down() throws UnsupportedError', () async {
+      final cmd = MakeMigrationCommand(testRoot: projectRoot.path);
+      await cmd.handle(
+        buildCommandContext(cmd, <String>[
+          'add_region_to_monitors',
+          '--table=monitors',
+        ]),
+      );
+
+      final content = writtenFile().readAsStringSync();
+      final String down = content.substring(content.indexOf('void down()'));
+      expect(down, contains('throw UnsupportedError('));
+      expect(down, matches(RegExp(r"'\d{14}_add_region_to_monitors")));
+    });
+
+    for (final String unsafe in <String>[
+      '../escape_table',
+      'nested/../../escape_table',
+      '/tmp/escape_table',
+      r'..\escape_table',
+      'nested//escape_table',
+    ]) {
+      test('refuses the unsafe name "$unsafe"', () async {
+        final cmd = MakeMigrationCommand(testRoot: projectRoot.path);
+        final ctx = buildCommandContext(cmd, <String>[unsafe]);
+
+        expect(await cmd.handle(ctx), 1);
+        expect(
+          (ctx.output as BufferedOutput).content,
+          contains('may not contain'),
+        );
+        expect(
+          projectRoot.listSync(recursive: true).whereType<File>(),
+          isEmpty,
+        );
+      });
+    }
+
     test('resolves a nested name to a nested directory', () async {
       final cmd = MakeMigrationCommand(testRoot: projectRoot.path);
       final code = await cmd.handle(

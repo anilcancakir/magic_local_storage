@@ -72,13 +72,13 @@ Future<void> main() async {
 <a name="web-setup"></a>
 ## Web Setup
 
-Flutter web loads SQLite from `web/sqlite3.wasm`. The installer downloads release `sqlite3-3.9.1` of the `sqlite3` package into `web/` when the folder exists and keeps a file that is already there. Add the web target later with `flutter create --platforms=web .`, then run:
+Flutter web loads SQLite from `web/sqlite3.wasm`. The installer downloads the wasm of the `sqlite3` release your project resolved (read from `.dart_tool/package_config.json`, `sqlite3-3.9.1` when it cannot tell) into `web/` when the folder exists, and keeps a file that is already there. Add the web target later with `flutter create --platforms=web .`, then run:
 
 ```bash
 dart run magic:dowel local_storage:install
 ```
 
-A failed download prints the `curl -L ... -o web/sqlite3.wasm` line to run by hand and does not fail the install. Keep the wasm at the release that matches the `sqlite3` Dart package: a mismatched wasm corrupts data at runtime. `dart run magic:dowel local_storage:install --dry-run` stages the edits without writing.
+A failed download prints the `curl -L ... -o web/sqlite3.wasm` line to run by hand and does not fail the install. The `sqlite3` package only works with the specially compiled `sqlite3.wasm` from its own GitHub releases (a wasm from sql.js and the like does not load), so take the one from the release that matches the `sqlite3` version in your `pubspec.lock`, and replace it when you upgrade that package. `dart run magic:dowel local_storage:install --dry-run` stages the edits without writing.
 
 <a name="verify"></a>
 ## Verify

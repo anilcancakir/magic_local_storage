@@ -1,6 +1,7 @@
 import 'package:dowel/dowel.dart';
 
 import '../local_storage_stub_loader.dart';
+import 'refuses_unsafe_names.dart';
 
 /// Make Factory Command.
 ///
@@ -13,7 +14,7 @@ import '../local_storage_stub_loader.dart';
 /// dowel make:factory User         # → UserFactory in user_factory.dart
 /// dowel make:factory UserFactory  # Same result, no double suffix
 /// ```
-class MakeFactoryCommand extends DowelGeneratorCommand {
+class MakeFactoryCommand extends DowelGeneratorCommand with RefusesUnsafeNames {
   /// Optional test root override; enables isolation in unit tests.
   final String? _testRoot;
 

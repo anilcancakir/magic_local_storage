@@ -12,12 +12,23 @@ dart run magic:dowel plugin:install magic_local_storage
 ```
 
 ```dart
+import 'package:magic/magic.dart';
 import 'package:magic_local_storage/magic_local_storage.dart';
+
+import 'config/app.dart';
 
 Future<void> main() async {
   // plugin:install registers DatabaseServiceProvider in lib/config/app.dart
   // and () => databaseConfig in the configFactories of lib/main.dart, then
-  // downloads web/sqlite3.wasm for a web project.
+  // downloads web/sqlite3.wasm for a web project. Magic.init boots the
+  // provider, which opens the connection the calls below need.
+  await Magic.init(
+    configFactories: [
+      () => appConfig,
+      () => databaseConfig,
+    ],
+  );
+
   await Migrator().run([]); // list every migration, in order
   await DB.table('posts').insert({'title': 'Hello'});
 }
@@ -26,7 +37,7 @@ Future<void> main() async {
 ## API
 
 - `DB` (facade, all static): `table(name)` returns a `QueryBuilder`; `select(sql, [params])` returns rows synchronously; `insert` returns the last row id; `update` and `delete` return the changed row count; `statement(sql, [params])`; `transaction(callback)`, `beginTransaction()`, `commit()`, `rollback()`.
-- `QueryBuilder`: `select`, `where(column, [operator], value)`, `whereNull`, `whereNotNull`, `orderBy`, `limit`, `offset`; `get`, `first`, `value`, `pluck`, `count`, `exists`, `insert`, `insertAll`, `update`, `delete`, `truncate`. Writes drop keys that are not columns of the table.
+- `QueryBuilder`: `select`, `where(column, [operator], value)`, `whereNull`, `whereNotNull`, `orderBy`, `limit`, `offset`; `get`, `first`, `value`, `pluck`, `count`, `exists`, `insert`, `insertAll`, `update`, `delete`, `truncate`. Writes drop keys that are not columns of the table and throw a `StateError` naming a table that does not exist. Operators: `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `is`, `is not`; directions `asc`, `desc`; anything else throws an `ArgumentError`. Table and column names are quoted; `select` entries are raw SQL.
 - `Schema` (facade): `create(table, callback)`, `table(table, callback)`, `drop`, `dropIfExists`, `rename`, `hasTable`, `hasColumn`, `getColumns` (the last three return futures). `Blueprint`: `id`, `string`, `text`, `integer`, `bigInteger`, `boolean`, `real`, `blob`, `timestamps`, `dropColumn`, `renameColumn`; modifiers `nullable()`, `unique()`, `defaultValue(v)`.
 - `Migration`: `name` (the ledger key), synchronous `up()` and `down()`. `Migrator()`: `run`, `rollback`, `reset`, `refresh`, `getExecuted`, `getPending`; the ledger table is `magic_migrations`; one `run` is one `SAVEPOINT`.
 - `Seeder`: `run()`, `call(seeders)`. `Seeding.run(List<Seeder>)` replaces core's removed `Magic.seed`. `Factory<T extends Model>`: `definition()`, `newInstance()`, `newFactory()`, `faker`; `count(n)`, `state(map)`, `create()`, `make()`, `raw()`.
@@ -38,7 +49,7 @@ Future<void> main() async {
 ## Platforms
 
 - Android, iOS, macOS, Windows, Linux: `sqlite3` over FFI, a file in the application documents directory.
-- Web: `web/sqlite3.wasm` (release `sqlite3-3.9.1`), downloaded by `local_storage:install` when `web/` exists; data persists in IndexedDB.
+- Web: `web/sqlite3.wasm` (from the resolved `sqlite3` release, `sqlite3-3.9.1` when it cannot be read), downloaded by `local_storage:install` when `web/` exists; data persists in IndexedDB.
 - Core keeps the `DatabaseConnected` and model events and the `LocalModelStore` contract; `make:model -m -f -s` and `make:resource` find this package's generators in the dowel registry and print a hint when it is absent.
 
 ## Rules for agents
@@ -49,7 +60,7 @@ Future<void> main() async {
 - Keep `up()` and `down()` synchronous (`void`, never `async`), and never call `DB.commit()` or `DB.rollback()` inside a migration or `DB.transaction`.
 - There is no migration discovery: pass every migration to `Migrator().run`, in order. Never rename a released migration's `name`.
 - Use `Seeding.run([...])`, not `Magic.seed`. Guard it so a restart does not seed twice.
-- Use `whereNull`, not `where(column, null)`. Names are interpolated into SQL, so never pass user input as a table, column or direction.
+- Prefer `whereNull` and `whereNotNull`; a `null` value with `>` or `like` throws. Names are quoted but `select` entries are raw SQL, so never pass user input as a table, column, operator or direction.
 - In tests, call `MagicApp.reset()` and `Magic.flush()` in `setUp`, then bind a store over `DatabaseManager().setConnection(sqlite3.openInMemory())`, and call `DatabaseManager().dispose()` in `tearDown`: the manager is a singleton that `Magic.flush()` does not clear.
 
 ## Docs

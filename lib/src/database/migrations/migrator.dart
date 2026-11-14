@@ -74,13 +74,12 @@ class Migrator {
   ///
   /// ### The whole run is one unit
   ///
-  /// It was not, and the state that produced is a host that never boots again.
-  /// Each migration was applied and recorded in turn with nothing around them,
-  /// so a failure part way left that migration's earlier statements applied
-  /// and its ledger row absent. The next launch re-ran it from its first
-  /// statement, met the table it had already created, and failed identically.
-  /// A host that migrates inside `Magic.init` before `runApp` has no UI to
-  /// report that from, and the only repair is deleting the database.
+  /// Every pending migration and its ledger row commit together or not at
+  /// all. When one throws, the statements of every migration in the run are
+  /// rolled back and no ledger row is written, so the next launch retries the
+  /// run from the schema it started with instead of meeting half-applied
+  /// tables. That matters most to a host that migrates inside `Magic.init`
+  /// before `runApp`, which has no UI to report a broken schema from.
   ///
   /// The run is the unit rather than each migration: a ledger recording one
   /// migration and not the next describes a schema nobody designed, and the
@@ -99,9 +98,9 @@ class Migrator {
   /// ### A migration must not manage its own transaction
   ///
   /// `DB.beginTransaction`, `commit` and `rollback` are a documented pattern
-  /// (`doc/database/getting-started.md`), so a migration written that way was
-  /// legitimate before this. It is not now, and the guard below is there
-  /// because failing silently was the alternative: a `COMMIT` inside `up`
+  /// for application code (`doc/basics/queries.md`, Transactions), but not
+  /// inside a migration, and the guard below enforces that because the
+  /// alternative is failing silently: a `COMMIT` inside `up`
   /// closes this savepoint, so every later migration runs unprotected and the
   /// `RELEASE` throws `no such savepoint` AFTER every migration has succeeded
   /// and committed its ledger row. The caller would see a failure from a run

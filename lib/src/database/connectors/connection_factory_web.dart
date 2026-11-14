@@ -10,7 +10,7 @@ import 'connection_factory_contract.dart';
 /// ## Setup Required
 ///
 /// You must download `sqlite3.wasm` from the
-/// [sqlite3 package releases](https://github.com/nickreid94/sqlite3.dart/releases)
+/// [sqlite3 package releases](https://github.com/simolus3/sqlite3.dart/releases)
 /// and place it in your project's `web/` folder.
 ///
 /// ## How It Works

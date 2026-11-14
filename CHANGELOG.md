@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Saving a `useLocal` model, or calling `insert` or `update`, on a table that does not exist yet now throws a `StateError` naming the table instead of reporting success, so `save()` returns `false` before the migration ran; a table created later is seen without a restart.
+- Table and column names are quoted in `Schema.create`, `Schema.table`, `Schema.drop`, `Schema.rename` and the query builder's `where`, `orderBy`, `insert` and `update`, so a column named `order`, `group` or `index` works, and a string default containing `'` no longer breaks `CREATE TABLE`.
+- `where` rejects an operator outside `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `is` and `is not`, and `orderBy` a direction other than `asc` or `desc`, with an `ArgumentError`, so neither can carry SQL.
+- `where(column, '=', null)` no longer binds `'='` as the value: a `null` value compiles to `IS NULL` with `=`, `is` or two arguments and to `IS NOT NULL` with `!=`, `<>` or `is not`, and throws an `ArgumentError` with any other operator.
+- `make:migration`, `make:seeder` and `make:factory` refuse a name with `..`, an empty segment, a backslash or a colon instead of writing outside `lib/database/`.
+- Corrected the sqlite3 repository links and the wasm compatibility notes, the example's web setup, and the `llms.txt` setup sample, which now calls `Magic.init`.
+
+### Changed
+
+- The `make:migration` skeleton's `down()` throws `UnsupportedError` until you write the rollback, so a rollback can no longer forget a migration that is still applied.
+- `local_storage:install` downloads the `sqlite3.wasm` of the `sqlite3` release the project resolved, falling back to 3.9.1 when it cannot read it.
+
 ## [1.0.0] - 2026-11-14
 
 ### Added

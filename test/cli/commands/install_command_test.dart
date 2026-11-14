@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -35,6 +36,20 @@ DowelContext _ctx(
 }
 
 String _output(DowelContext ctx) => (ctx.output as BufferedOutput).content;
+
+/// Adds a [name] entry at [rootUri] to the fixture's package config.
+void _addPackage(Directory project, String name, String rootUri) {
+  final File config = File('${project.path}/.dart_tool/package_config.json');
+  final Map<String, dynamic> decoded =
+      jsonDecode(config.readAsStringSync()) as Map<String, dynamic>;
+  (decoded['packages'] as List<dynamic>).add(<String, dynamic>{
+    'name': name,
+    'rootUri': rootUri,
+    'packageUri': 'lib/',
+    'languageVersion': '3.10',
+  });
+  config.writeAsStringSync(jsonEncode(decoded));
+}
 
 /// A loopback server standing in for the GitHub release download, so the
 /// wasm step runs for real without touching the network.
@@ -148,6 +163,37 @@ void main() async {
       );
     });
 
+    test('downloads the wasm of the sqlite3 release the project resolved', () {
+      _addPackage(
+        temp,
+        'sqlite3',
+        'file:///cache/hosted/pub.dev/sqlite3-3.9.4/',
+      );
+      final command = _PinnedInstallCommand(temp.path);
+
+      expect(command.resolveSqliteRelease(), '3.9.4');
+      expect(
+        InstallCommand.sqliteWasmUrlFor(command.resolveSqliteRelease()),
+        Uri.parse(
+          'https://github.com/simolus3/sqlite3.dart/releases/download/'
+          'sqlite3-3.9.4/sqlite3.wasm',
+        ),
+      );
+    });
+
+    test('falls back to the pinned release when sqlite3 is not hosted', () {
+      _addPackage(temp, 'sqlite3', '../../vendor/sqlite3/');
+      final command = _PinnedInstallCommand(temp.path);
+
+      expect(command.resolveSqliteRelease(), InstallCommand.sqliteWasmRelease);
+    });
+
+    test('falls back to the pinned release when sqlite3 is not resolved', () {
+      final command = _PinnedInstallCommand(temp.path);
+
+      expect(command.resolveSqliteRelease(), InstallCommand.sqliteWasmRelease);
+    });
+
     test('resolves the bundled install.yaml off the package root', () {
       final path = _PinnedInstallCommand(temp.path).resolveManifestPath();
 
@@ -222,6 +268,21 @@ void main() async {
       expect(server.hits, 1);
       expect(File(at('web/sqlite3.wasm')).readAsBytesSync(), _WasmServer.body);
       expect(_output(ctx), contains('web/sqlite3.wasm written (2.0 KB)'));
+    });
+
+    test('names the resolved sqlite3 release it downloads', () async {
+      server = await _WasmServer.start();
+      Directory(at('web')).createSync();
+      _addPackage(
+        temp,
+        'sqlite3',
+        'file:///cache/hosted/pub.dev/sqlite3-3.9.4/',
+      );
+      final command = _PinnedInstallCommand(temp.path, wasmUrl: server.url);
+      final ctx = _ctx(command);
+
+      expect(await command.handle(ctx), 0, reason: _output(ctx));
+      expect(_output(ctx), contains('Downloading sqlite3.wasm (3.9.4)'));
     });
 
     test('keeps an existing web/sqlite3.wasm', () async {

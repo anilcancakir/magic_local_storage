@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 import 'package:sqlite3/common.dart';
 
 import 'connectors/connection_factory.dart';
+import 'query/identifier.dart';
 
 /// The Database Manager.
 ///
@@ -99,23 +100,29 @@ class DatabaseManager {
     await Event.dispatch(DatabaseConnected(defaultConnection));
   }
 
-  /// Get the column names for a table.
+  /// Get the column names for a table, or an empty list when it does not
+  /// exist.
   ///
-  /// Results are cached for performance. Use [clearSchemaCache] to refresh.
+  /// A table's columns are cached for performance; use [clearSchemaCache] to
+  /// refresh. A missing table is never cached, so a table created later by a
+  /// raw statement is seen on the next call.
   Future<List<String>> getColumns(String table) async {
-    // Return cached if available
+    // 1. Return cached if available.
     if (_schemaCache.containsKey(table)) {
       return _schemaCache[table]!;
     }
 
-    // Query table info using PRAGMA
-    final result = connection.select('PRAGMA table_info($table)');
-
-    // Extract column names (column 1 is 'name')
+    // 2. Read the columns; column 1 of table_info is 'name'.
+    final result = connection.select(
+      'PRAGMA table_info(${quoteIdentifier(table)})',
+    );
     final columns = result.map((row) => row['name'] as String).toList();
 
-    // Cache and return
-    _schemaCache[table] = columns;
+    // 3. Cache only a table that exists.
+    if (columns.isNotEmpty) {
+      _schemaCache[table] = columns;
+    }
+
     return columns;
   }
 

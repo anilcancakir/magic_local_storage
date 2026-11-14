@@ -1,6 +1,7 @@
 import 'package:dowel/dowel.dart';
 
 import '../local_storage_stub_loader.dart';
+import 'refuses_unsafe_names.dart';
 
 /// Make Seeder Command.
 ///
@@ -13,7 +14,7 @@ import '../local_storage_stub_loader.dart';
 /// dowel make:seeder User         # → UserSeeder in user_seeder.dart
 /// dowel make:seeder UserSeeder   # Same result, no double suffix
 /// ```
-class MakeSeederCommand extends DowelGeneratorCommand {
+class MakeSeederCommand extends DowelGeneratorCommand with RefusesUnsafeNames {
   /// Optional test root override; enables isolation in unit tests.
   final String? _testRoot;
 

@@ -41,10 +41,12 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. The installer adds `Dat
 ## Query rules
 
 1. Raw `DB.select`, `insert`, `update`, `delete` and `statement` are synchronous; `QueryBuilder` terminals return futures.
-2. Values are bound; table, column and order-direction names are interpolated. Never pass user input as a name.
-3. `where(column, null)` matches nothing. Use `whereNull` and `whereNotNull`. Constraints are always `AND`ed.
-4. `insertAll` is one insert per record and not atomic; wrap it in `DB.transaction`.
-5. `DB.transaction` owns its transaction. A `DB.commit()` or `DB.rollback()` inside it makes the call throw. For manual control use `beginTransaction`, `commit` and `rollback` throughout and do not mix the two.
+2. Values are bound; table and column names are quoted, so `order` works as a column, but `select([...])` entries are raw SQL. Never pass user input as a name.
+3. `where` takes `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `is` and `is not`; `orderBy` takes `asc` or `desc`. Anything else, `in` included, throws an `ArgumentError`.
+4. A `null` value in `where` becomes `IS NULL` (`=`, `is`, two arguments) or `IS NOT NULL` (`!=`, `<>`, `is not`); prefer `whereNull` and `whereNotNull`. Constraints are always `AND`ed.
+5. `insert` or `update` on a table that does not exist throws a `StateError` naming it, so `save()` on a `useLocal` model answers `false` until its migration ran.
+6. `insertAll` is one insert per record and not atomic; wrap it in `DB.transaction`.
+7. `DB.transaction` owns its transaction. A `DB.commit()` or `DB.rollback()` inside it makes the call throw. For manual control use `beginTransaction`, `commit` and `rollback` throughout and do not mix the two.
 
 ## Seeding rules
 

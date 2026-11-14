@@ -71,7 +71,7 @@ dart run magic:dowel make:migration create_posts_table --create=posts
 dart run magic:dowel make:migration add_slug_to_posts --table=posts
 ```
 
-This writes `lib/database/migrations/m_<YYYYMMDDHHMMSS>_<snake_name>.dart` holding a PascalCase class with `up` and `down`. `--create=<table>` selects the stub with a `Schema.create` body; without it (or with `--table`) you get an empty skeleton for you to fill. The command lives in this package, see [Generators](../guides/generators.md).
+This writes `lib/database/migrations/m_<YYYYMMDDHHMMSS>_<snake_name>.dart` holding a PascalCase class with `up` and `down`. `--create=<table>` selects the stub with a `Schema.create` body; without it (or with `--table`) you get a skeleton with an empty `up()` and a `down()` that throws `UnsupportedError` until you write the rollback. The command lives in this package, see [Generators](../guides/generators.md).
 
 <a name="running-migrations"></a>
 ## Running Migrations

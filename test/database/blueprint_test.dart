@@ -13,13 +13,32 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains('CREATE TABLE IF NOT EXISTS users'));
-      expect(sql, contains('id INTEGER PRIMARY KEY AUTOINCREMENT'));
-      expect(sql, contains('name TEXT NOT NULL'));
-      expect(sql, contains('email TEXT NOT NULL UNIQUE'));
-      expect(sql, contains('is_active INTEGER NOT NULL DEFAULT 1'));
-      expect(sql, contains('created_at TEXT'));
-      expect(sql, contains('updated_at TEXT'));
+      expect(sql, contains('CREATE TABLE IF NOT EXISTS "users"'));
+      expect(sql, contains('"id" INTEGER PRIMARY KEY AUTOINCREMENT'));
+      expect(sql, contains('"name" TEXT NOT NULL'));
+      expect(sql, contains('"email" TEXT NOT NULL UNIQUE'));
+      expect(sql, contains('"is_active" INTEGER NOT NULL DEFAULT 1'));
+      expect(sql, contains('"created_at" TEXT'));
+      expect(sql, contains('"updated_at" TEXT'));
+    });
+
+    test('quotes table and column names, doubling an embedded quote', () {
+      final blueprint = Blueprint('order');
+      blueprint.integer('group');
+      blueprint.string('say "hi"');
+
+      final sql = blueprint.toSql();
+
+      expect(sql, startsWith('CREATE TABLE IF NOT EXISTS "order" ('));
+      expect(sql, contains('"group" INTEGER NOT NULL'));
+      expect(sql, contains('"say ""hi""" TEXT NOT NULL'));
+    });
+
+    test('escapes a single quote in a string default', () {
+      final blueprint = Blueprint('notes');
+      blueprint.string('title').defaultValue("Ada's note");
+
+      expect(blueprint.toSql(), contains("DEFAULT 'Ada''s note'"));
     });
 
     test('generates nullable columns correctly', () {
@@ -30,9 +49,9 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains('title TEXT NOT NULL'));
-      expect(sql, contains('content TEXT')); // No NOT NULL
-      expect(sql, isNot(contains('content TEXT NOT NULL')));
+      expect(sql, contains('"title" TEXT NOT NULL'));
+      expect(sql, contains('"content" TEXT')); // No NOT NULL
+      expect(sql, isNot(contains('"content" TEXT NOT NULL')));
     });
 
     test('generates default values correctly', () {
@@ -45,9 +64,9 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains("value TEXT NOT NULL DEFAULT 'default_value'"));
-      expect(sql, contains('priority INTEGER NOT NULL DEFAULT 0'));
-      expect(sql, contains('enabled INTEGER NOT NULL DEFAULT 0'));
+      expect(sql, contains("\"value\" TEXT NOT NULL DEFAULT 'default_value'"));
+      expect(sql, contains('"priority" INTEGER NOT NULL DEFAULT 0'));
+      expect(sql, contains('"enabled" INTEGER NOT NULL DEFAULT 0'));
     });
 
     test('generates real (float) columns', () {
@@ -58,7 +77,7 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains('price REAL NOT NULL'));
+      expect(sql, contains('"price" REAL NOT NULL'));
     });
 
     test('generates blob columns', () {
@@ -69,7 +88,7 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains('data BLOB NOT NULL'));
+      expect(sql, contains('"data" BLOB NOT NULL'));
     });
   });
 
@@ -83,7 +102,7 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains("optional_value TEXT DEFAULT 'none'"));
+      expect(sql, contains("\"optional_value\" TEXT DEFAULT 'none'"));
       expect(sql, isNot(contains('NOT NULL')));
     });
 
@@ -93,7 +112,7 @@ void main() {
 
       final sql = blueprint.toSql();
 
-      expect(sql, contains('unique_field TEXT NOT NULL UNIQUE'));
+      expect(sql, contains('"unique_field" TEXT NOT NULL UNIQUE'));
     });
   });
 }

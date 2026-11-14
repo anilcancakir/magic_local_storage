@@ -4,6 +4,7 @@ import 'package:magic/magic.dart';
 import 'package:sqlite3/common.dart';
 
 import '../database_manager.dart';
+import 'identifier.dart';
 
 /// Laravel-style Query Builder.
 ///
@@ -74,6 +75,25 @@ import '../database_manager.dart';
 ///   .delete();
 /// ```
 class QueryBuilder {
+  /// Marks the absent third argument of [where], so a `null` value is told
+  /// apart from the two-argument form.
+  static const Object _noValue = Object();
+
+  /// The operators [where] writes into the SQL, in lower case.
+  static const Set<String> _operators = {
+    '=',
+    '!=',
+    '<>',
+    '<',
+    '<=',
+    '>',
+    '>=',
+    'like',
+    'not like',
+    'is',
+    'is not',
+  };
+
   /// The table name.
   final String _table;
 
@@ -100,6 +120,10 @@ class QueryBuilder {
 
   /// Select specific columns.
   ///
+  /// Each entry is a raw SQL fragment written into the `SELECT` list as given,
+  /// so an expression such as `COUNT(*) AS total` works and a keyword column
+  /// has to be quoted by hand (`'"order"'`). Never pass user input here.
+  ///
   /// ```dart
   /// DB.table('users').select(['name', 'email']).get();
   /// ```
@@ -110,6 +134,15 @@ class QueryBuilder {
 
   /// Add a where clause.
   ///
+  /// The column is quoted as an identifier and the value is bound. The
+  /// operator is one of `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`,
+  /// `not like`, `is` and `is not`, in any case. A `null` value compiles to
+  /// `IS NULL` for `=` and `is`, and to `IS NOT NULL` for `!=`, `<>` and
+  /// `is not`.
+  ///
+  /// Throws an [ArgumentError] for any other operator, or for `null` with an
+  /// ordering or `like` operator.
+  ///
   /// ```dart
   /// // Equality
   /// DB.table('users').where('id', 1);
@@ -117,19 +150,34 @@ class QueryBuilder {
   /// // With operator
   /// DB.table('users').where('age', '>=', 18);
   /// ```
-  QueryBuilder where(String column, dynamic operatorOrValue, [dynamic value]) {
-    String operator;
-    dynamic actualValue;
-
-    if (value == null) {
-      operator = '=';
-      actualValue = operatorOrValue;
-    } else {
-      operator = operatorOrValue as String;
-      actualValue = value;
+  QueryBuilder where(
+    String column,
+    dynamic operatorOrValue, [
+    dynamic value = _noValue,
+  ]) {
+    // 1. Two arguments mean equality; count them rather than test for null,
+    //    so `where(column, '=', null)` keeps its operator.
+    if (identical(value, _noValue)) {
+      return where(column, '=', operatorOrValue);
     }
 
-    _wheres.add(_WhereClause(column, operator, actualValue));
+    // 2. Only a known operator reaches the SQL text.
+    final String operator = _normalizeOperator(operatorOrValue);
+
+    // 3. A null value never matches through `= ?`; route it to IS [NOT] NULL.
+    if (value == null) {
+      return switch (operator) {
+        '=' || 'is' => whereNull(column),
+        '!=' || '<>' || 'is not' => whereNotNull(column),
+        _ => throw ArgumentError.value(
+          value,
+          'value',
+          'Operator "$operator" cannot compare with null',
+        ),
+      };
+    }
+
+    _wheres.add(_WhereClause(column, operator, value));
     return this;
   }
 
@@ -155,11 +203,23 @@ class QueryBuilder {
 
   /// Add an order by clause.
   ///
+  /// The column is quoted as an identifier. Throws an [ArgumentError] when
+  /// [direction] is not `asc` or `desc`, in any case.
+  ///
   /// ```dart
   /// DB.table('posts').orderBy('created_at', 'desc');
   /// ```
   QueryBuilder orderBy(String column, [String direction = 'asc']) {
-    _orders.add(_OrderClause(column, direction.toUpperCase()));
+    final String normalized = direction.toUpperCase();
+    if (normalized != 'ASC' && normalized != 'DESC') {
+      throw ArgumentError.value(
+        direction,
+        'direction',
+        'Order direction must be "asc" or "desc"',
+      );
+    }
+
+    _orders.add(_OrderClause(column, normalized));
     return this;
   }
 
@@ -279,11 +339,11 @@ class QueryBuilder {
       return 0;
     }
 
-    final columns = filteredData.keys.join(', ');
+    final columns = filteredData.keys.map(quoteIdentifier).join(', ');
     final placeholders = List.filled(filteredData.length, '?').join(', ');
     final values = filteredData.values.toList();
 
-    final sql = 'INSERT INTO $_table ($columns) VALUES ($placeholders)';
+    final sql = 'INSERT INTO $_wrappedTable ($columns) VALUES ($placeholders)';
     _db.connection.execute(sql, _prepareValues(values));
 
     // Return last insert ID
@@ -320,13 +380,15 @@ class QueryBuilder {
       return 0;
     }
 
-    final setClauses = filteredData.keys.map((col) => '$col = ?').join(', ');
+    final setClauses = filteredData.keys
+        .map((col) => '${quoteIdentifier(col)} = ?')
+        .join(', ');
     final values = filteredData.values.toList();
 
     final whereSql = _buildWhereSql();
     final whereParams = _buildWhereParams();
 
-    final sql = 'UPDATE $_table SET $setClauses$whereSql';
+    final sql = 'UPDATE $_wrappedTable SET $setClauses$whereSql';
     _db.connection.execute(sql, [..._prepareValues(values), ...whereParams]);
 
     // Return affected rows
@@ -343,7 +405,7 @@ class QueryBuilder {
     final whereSql = _buildWhereSql();
     final whereParams = _buildWhereParams();
 
-    final sql = 'DELETE FROM $_table$whereSql';
+    final sql = 'DELETE FROM $_wrappedTable$whereSql';
     _db.connection.execute(sql, whereParams);
 
     // Return affected rows
@@ -357,17 +419,36 @@ class QueryBuilder {
   /// await DB.table('logs').truncate();
   /// ```
   Future<void> truncate() async {
-    _db.connection.execute('DELETE FROM $_table');
+    _db.connection.execute('DELETE FROM $_wrappedTable');
   }
 
   // ---------------------------------------------------------------------------
   // Private Helpers
   // ---------------------------------------------------------------------------
 
-  /// Build the SELECT SQL statement.
+  /// The table name quoted as an identifier.
+  String get _wrappedTable => wrapIdentifier(_table);
+
+  /// Lower-cases [operator] and checks it against [_operators].
+  String _normalizeOperator(dynamic operator) {
+    final String? normalized = operator is String
+        ? operator.toLowerCase()
+        : null;
+    if (normalized == null || !_operators.contains(normalized)) {
+      throw ArgumentError.value(
+        operator,
+        'operator',
+        'Unsupported where operator; use one of ${_operators.join(', ')}',
+      );
+    }
+
+    return normalized;
+  }
+
+  /// Build the SELECT SQL statement. The select list stays raw, see [select].
   String _buildSelectSql() {
     final columns = _selectColumns?.join(', ') ?? '*';
-    final buffer = StringBuffer('SELECT $columns FROM $_table');
+    final buffer = StringBuffer('SELECT $columns FROM $_wrappedTable');
 
     buffer.write(_buildWhereSql());
     buffer.write(_buildOrderSql());
@@ -378,7 +459,7 @@ class QueryBuilder {
 
   /// Build the COUNT SQL statement.
   String _buildCountSql() {
-    final buffer = StringBuffer('SELECT COUNT(*) as count FROM $_table');
+    final buffer = StringBuffer('SELECT COUNT(*) as count FROM $_wrappedTable');
     buffer.write(_buildWhereSql());
     return buffer.toString();
   }
@@ -389,10 +470,11 @@ class QueryBuilder {
 
     final clauses = _wheres
         .map((w) {
+          final String column = wrapIdentifier(w.column);
           if (w.isNull) {
-            return '${w.column} ${w.operator} NULL';
+            return '$column ${w.operator} NULL';
           }
-          return '${w.column} ${w.operator} ?';
+          return '$column ${w.operator} ?';
         })
         .join(' AND ');
 
@@ -410,7 +492,9 @@ class QueryBuilder {
   /// Build the ORDER BY clause.
   String _buildOrderSql() {
     if (_orders.isEmpty) return '';
-    final clauses = _orders.map((o) => '${o.column} ${o.direction}').join(', ');
+    final clauses = _orders
+        .map((o) => '${wrapIdentifier(o.column)} ${o.direction}')
+        .join(', ');
     return ' ORDER BY $clauses';
   }
 
@@ -427,10 +511,21 @@ class QueryBuilder {
   }
 
   /// Filter data map to only include columns that exist in the table.
+  ///
+  /// Throws a [StateError] naming the table when it has no columns, which is
+  /// a table that does not exist yet: answering an empty map there would let
+  /// a write to it report success.
   Future<Map<String, dynamic>> _filterDataBySchema(
     Map<String, dynamic> data,
   ) async {
     final columns = await _db.getColumns(_table);
+    if (columns.isEmpty) {
+      throw StateError(
+        'Table "$_table" does not exist. Run the migration that creates it '
+        '(Migrator().run) before writing to it.',
+      );
+    }
+
     final filtered = <String, dynamic>{};
 
     for (final entry in data.entries) {
