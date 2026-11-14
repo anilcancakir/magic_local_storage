@@ -1,7 +1,7 @@
 ---
 name: magic-local-storage
 description: "Store data locally in a Magic app with SQLite: DB and Schema facades, migrations, seeders, factories, the useLocal model store and SyncFeed."
-version: 1.0.0
+version: 1.0.1
 when_to_use: "Use when code imports package:magic_local_storage or touches DB, Schema, Migration, Migrator, Seeding.run, Factory, SyncFeed, DatabaseServiceProvider or a useLocal model in a Magic app."
 ---
 

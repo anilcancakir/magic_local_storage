@@ -1,6 +1,6 @@
 name: magic_local_storage
 description: "SQLite local database layer for Magic apps: DB and Schema facades, migrations, seeders, factories, query builder and sync."
-version: 1.0.0
+version: 1.0.1
 homepage: https://anilcancakir.com/magic/local_storage
 repository: https://github.com/anilcancakir/magic_local_storage
 issue_tracker: https://github.com/anilcancakir/magic_local_storage/issues
