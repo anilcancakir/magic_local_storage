@@ -60,7 +60,7 @@ Without any `database` config the manager still opens `magic_app.db` on the `sql
 | Android, iOS, macOS, Windows, Linux | `sqlite3` over FFI | A file named by `database` in the application documents directory, which survives restarts and updates. |
 | Web | `sqlite3.wasm` | An IndexedDB-backed file system named by `database`, so rows survive a page reload. |
 
-The platform factory is chosen at compile time, so the same code runs on every target. On the web the wasm loads from `/sqlite3.wasm`, which is `web/sqlite3.wasm` in your project; see [Installation](../getting-started/installation.md#web-setup).
+The platform factory is chosen at compile time, so the same code runs on every target. On the web the wasm loads from the fixed root path `/sqlite3.wasm`, so the server must serve the file at the origin root: `web/sqlite3.wasm` is found there when the app is served from the site root, and an app served from a sub-path must also map `/sqlite3.wasm` at the origin root; see [Installation](../getting-started/installation.md#web-setup).
 
 <a name="databasemanager"></a>
 ## DatabaseManager

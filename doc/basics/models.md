@@ -64,7 +64,7 @@ Future<void> main() async {
 | `useLocal` | `useRemote` | Behaviour |
 |:-----------|:------------|:----------|
 | `true` | `false` | SQLite only; no HTTP call is made. |
-| `true` | `true` | Both. Reads try SQLite first and fall back to the API; a row pulled from the API is upserted locally; writes go to both. |
+| `true` | `true` | Both. `find` reads SQLite first and asks the API on a miss; `all` reads SQLite and asks the API only when that read throws. A row pulled from the API is upserted locally; writes go to both. |
 | `false` | `true` | API only; the store is never resolved. This is the default. |
 
 `save`, `delete`, `refresh`, `findById` and `allModels` are core's `InteractsWithPersistence`; see the Eloquent pages of the core documentation for fillable lists, casts, events and the remote leg.
@@ -177,7 +177,7 @@ void main() {
 | Mistake | Fix |
 |:--------|:----|
 | A `StateError` mentioning `local_model_store` | Register `DatabaseServiceProvider`, or bind a `LocalModelStore`, or set `useLocal` to `false`. |
-| Saving a model before its migration ran | The store throws a `StateError` naming the missing table, so `save()` returns `false` and the model keeps `exists == false` (core's `save` catches the error). Run `Migrator().run` first. |
+| Saving a model before its migration ran | The store throws a `StateError` naming the missing table, so `save()` returns `false` on a local-only model and it keeps `exists == false` (core's `save` catches the error; with `useRemote` on, a successful remote write still reports `true`). Run `Migrator().run` first. |
 | A typo in `fillable` or an attribute name | A key without a column is dropped silently by the store. Check the table's columns. |
 | Reading a boolean column through `query()` | Raw rows hold `0` and `1`; hydrate through the model to apply its casts. |
 | Expecting `Magic.seed` | It is gone; use `Seeding.run`, see [Seeding](./seeding.md). |

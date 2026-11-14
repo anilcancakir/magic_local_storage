@@ -4,7 +4,7 @@
 
 The SQLite layer of the Magic Framework: `DatabaseServiceProvider` and `databaseConfig`, the `DB` and `Schema` facades, `DatabaseManager`, `QueryBuilder`, `Blueprint`, `Migration` and `Migrator`, `Seeder`, `Factory` and `Seeding.run`, the `QueryModelStore` that fulfils core's `LocalModelStore` for `useLocal` models, the `SyncFeed` sync skeleton, and the `make:migration`, `make:seeder`, `make:factory` and `local_storage:install` generators.
 
-**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0 · **Requires:** `magic` ^1.0.0
+**Version:** 1.0.1 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0 · **Requires:** `magic` ^1.0.0
 
 ## Commands
 
@@ -44,7 +44,7 @@ Core keeps the `LocalModelStore` contract, `InteractsWithPersistence`, `Model` a
 
 ## Post-Change Checklist
 
-After ANY source code change, sync **before committing**. A change is not done while one of these is stale:
+After any source code change, sync **before committing**. A change is not done while one of these is stale:
 
 1. **`CHANGELOG.md`**: Add entry under `[Unreleased]` section
 2. **`README.md`, `llms.txt` and the `doc/` pages**: Update if features, API, or usage changes
@@ -76,7 +76,7 @@ Every feature, fix, or refactor goes through red-green-refactor: write a failing
 | Calling `Schema.hasTable` or `DatabaseManager.getColumns` from a migration | They return futures; read `PRAGMA table_info` with `DB.select` |
 | Throwing from `SyncFeed.run`, or advancing the mark from an adopted row | `run` answers a `SyncReport`; only the push advances the mark |
 | Moving `LocalModelStore` or the db and model events here | They stay in core; the plugin implements the contract and dispatches `DatabaseConnected` |
-| Relative paths in `pubspec_overrides.yaml` | Use ABSOLUTE ones; the file is never committed |
+| Relative paths in `pubspec_overrides.yaml` | Use absolute ones; the file is never committed |
 
 ## Release
 
