@@ -1,0 +1,41 @@
+# magic_local_storage install manifest (PluginInstaller DSL schema v1).
+#
+# Hybrid layout: this manifest carries the static slice (provider and config
+# factory). `local_storage:install` parses it, runs it, then downloads
+# web/sqlite3.wasm for a web project, a file write the v1 schema cannot
+# express. `bootstrap_command` chains that command after `plugin:install`, and
+# the two helper-backed injections skip when their code is already present, so
+# the second pass over the manifest converges.
+#
+# Nothing is published: `databaseConfig` is a getter exported by this
+# package's barrel, so a published lib/config/database.dart declaring the same
+# getter would make every import of both ambiguous.
+
+plugin_name: magic_local_storage
+
+magic:
+  # Injects `import 'package:magic_local_storage/magic_local_storage.dart';`
+  # plus `(app) => DatabaseServiceProvider(app),` into the consumer's
+  # lib/config/app.dart providers list. Idempotent.
+  provider: DatabaseServiceProvider
+
+  # Injects `() => databaseConfig,` into lib/main.dart's configFactories,
+  # imported from the package barrel because no config is published.
+  config_factory: databaseConfig
+
+post_install:
+  message: |
+    Magic Local Storage installed. Next steps:
+
+    1. Run `flutter pub get`.
+
+    2. The default connection is SQLite at `magic_app.db` in the app's
+       documents directory (sqlite3.wasm on web). Generate a migration with:
+
+         dart run magic:dowel make:migration create_posts_table --create=posts
+
+    3. Flutter web loads SQLite from web/sqlite3.wasm. The install downloads
+       it when the project has a web/ directory; re-run
+       `local_storage:install` after adding the web target later.
+
+bootstrap_command: local_storage:install

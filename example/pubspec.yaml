@@ -1,0 +1,20 @@
+name: magic_local_storage_example
+description: Saves and lists notes in a local SQLite table through a useLocal model, with one migration run at startup.
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  magic: ^0.1.0
+  magic_local_storage:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

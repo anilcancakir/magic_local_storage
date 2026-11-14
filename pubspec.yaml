@@ -1,0 +1,31 @@
+name: magic_local_storage
+description: "SQLite local database layer for Magic apps: DB and Schema facades, migrations, seeders, factories, query builder and sync."
+version: 0.0.1
+homepage: https://anilcancakir.com/magic_local_storage
+repository: https://github.com/anilcancakir/magic_local_storage
+issue_tracker: https://github.com/anilcancakir/magic_local_storage/issues
+
+topics:
+  - sqlite
+  - database
+  - local-storage
+  - magic
+
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  magic: ^0.1.0
+  dowel: ^0.0.21
+  faker: ^2.2.0
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  sqlite3: ^3.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

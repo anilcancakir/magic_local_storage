@@ -1,0 +1,17 @@
+import 'package:magic_local_storage/magic_local_storage.dart';
+
+/// Migration: {{ fullName }}
+class {{ className }} extends Migration {
+  @override
+  String get name => '{{ fullName }}';
+
+  @override
+  void up() {
+    // Define your migration here.
+  }
+
+  @override
+  void down() {
+    // Reverse the migration.
+  }
+}

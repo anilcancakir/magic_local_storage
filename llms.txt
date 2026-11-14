@@ -1,0 +1,72 @@
+# magic_local_storage
+
+> SQLite for Magic apps: the `DB` and `Schema` facades, `Migration` and `Migrator`, `Seeder`, `Factory` and `Seeding.run`, a push-then-pull `SyncFeed`, and the `QueryModelStore` behind every `useLocal` model. `DatabaseServiceProvider` wires it, `make:migration`, `make:seeder` and `make:factory` scaffold it.
+
+**Stack**: Flutter >=3.47.0 · Dart >=3.13.0 · Requires `magic` ^0.1.0 · Runtime deps: `magic`, `sqlite3`, `path_provider`, `path`, `faker`; dowel runs the installer. No mocking library.
+
+**Setup**:
+
+```bash
+flutter pub add magic_local_storage
+dart run magic:dowel plugin:install magic_local_storage
+```
+
+```dart
+import 'package:magic_local_storage/magic_local_storage.dart';
+
+Future<void> main() async {
+  // plugin:install registers DatabaseServiceProvider in lib/config/app.dart
+  // and () => databaseConfig in the configFactories of lib/main.dart, then
+  // downloads web/sqlite3.wasm for a web project.
+  await Migrator().run([]); // list every migration, in order
+  await DB.table('posts').insert({'title': 'Hello'});
+}
+```
+
+## API
+
+- `DB` (facade, all static): `table(name)` returns a `QueryBuilder`; `select(sql, [params])` returns rows synchronously; `insert` returns the last row id; `update` and `delete` return the changed row count; `statement(sql, [params])`; `transaction(callback)`, `beginTransaction()`, `commit()`, `rollback()`.
+- `QueryBuilder`: `select`, `where(column, [operator], value)`, `whereNull`, `whereNotNull`, `orderBy`, `limit`, `offset`; `get`, `first`, `value`, `pluck`, `count`, `exists`, `insert`, `insertAll`, `update`, `delete`, `truncate`. Writes drop keys that are not columns of the table.
+- `Schema` (facade): `create(table, callback)`, `table(table, callback)`, `drop`, `dropIfExists`, `rename`, `hasTable`, `hasColumn`, `getColumns` (the last three return futures). `Blueprint`: `id`, `string`, `text`, `integer`, `bigInteger`, `boolean`, `real`, `blob`, `timestamps`, `dropColumn`, `renameColumn`; modifiers `nullable()`, `unique()`, `defaultValue(v)`.
+- `Migration`: `name` (the ledger key), synchronous `up()` and `down()`. `Migrator()`: `run`, `rollback`, `reset`, `refresh`, `getExecuted`, `getPending`; the ledger table is `magic_migrations`; one `run` is one `SAVEPOINT`.
+- `Seeder`: `run()`, `call(seeders)`. `Seeding.run(List<Seeder>)` replaces core's removed `Magic.seed`. `Factory<T extends Model>`: `definition()`, `newInstance()`, `newFactory()`, `faker`; `count(n)`, `state(map)`, `create()`, `make()`, `raw()`.
+- `DatabaseServiceProvider`: `register()` binds `db` (the `DatabaseManager` singleton) and `local_model_store` (a `QueryModelStore`); `boot()` opens the connection. `databaseConfig`: config getter (`database.default` `sqlite`, file `magic_app.db`), registered through `configFactories`.
+- `QueryModelStore implements LocalModelStore` (the core contract, container key `local_model_store`); `ModelQuery` extension adds `model.query()`. A `useLocal => true` model with no store bound throws a `StateError` naming magic_local_storage.
+- Sync: `SyncFeed` (override `feed`, `resource`, `envelopeKey`, `pending`, `adoptRow`; `run({scope, account})` returns a `SyncReport` and never throws), `SyncLedger({table})`, `CreateSyncCursorsTable`.
+- Generators (dowel): `make:migration <name> [--create=<table>]`, `make:seeder <name>`, `make:factory <name>`, `local_storage:install`.
+
+## Platforms
+
+- Android, iOS, macOS, Windows, Linux: `sqlite3` over FFI, a file in the application documents directory.
+- Web: `web/sqlite3.wasm` (release `sqlite3-3.9.1`), downloaded by `local_storage:install` when `web/` exists; data persists in IndexedDB.
+- Core keeps the `DatabaseConnected` and model events and the `LocalModelStore` contract; `make:model -m -f -s` and `make:resource` find this package's generators in the dowel registry and print a hint when it is absent.
+
+## Rules for agents
+
+- Import only `package:magic_local_storage/magic_local_storage.dart`.
+- Register `DatabaseServiceProvider` in `providers` and `() => databaseConfig` in `configFactories`. Neither is automatic.
+- Add the package before setting `useLocal => true`; otherwise every persistence leg throws a `StateError`.
+- Keep `up()` and `down()` synchronous (`void`, never `async`), and never call `DB.commit()` or `DB.rollback()` inside a migration or `DB.transaction`.
+- There is no migration discovery: pass every migration to `Migrator().run`, in order. Never rename a released migration's `name`.
+- Use `Seeding.run([...])`, not `Magic.seed`. Guard it so a restart does not seed twice.
+- Use `whereNull`, not `where(column, null)`. Names are interpolated into SQL, so never pass user input as a table, column or direction.
+- In tests, call `MagicApp.reset()` and `Magic.flush()` in `setUp`, then bind a store over `DatabaseManager().setConnection(sqlite3.openInMemory())`, and call `DatabaseManager().dispose()` in `tearDown`: the manager is a singleton that `Magic.flush()` does not clear.
+
+## Docs
+
+- [Installation](https://anilcancakir.com/magic_local_storage/docs/getting-started/installation.md): install, requirements, registering the provider and config, web setup.
+- [Configuration](https://anilcancakir.com/magic_local_storage/docs/basics/configuration.md): the `database` config, platforms, `DatabaseManager`.
+- [Queries](https://anilcancakir.com/magic_local_storage/docs/basics/queries.md): `DB`, `QueryBuilder`, transactions.
+- [Migrations](https://anilcancakir.com/magic_local_storage/docs/basics/migrations.md): `Migration`, `Schema`, `Blueprint`, `Migrator`.
+- [Models](https://anilcancakir.com/magic_local_storage/docs/basics/models.md): `useLocal`, `LocalModelStore`, `QueryModelStore`, the `StateError`.
+- [Seeding](https://anilcancakir.com/magic_local_storage/docs/basics/seeding.md): `Seeder`, `Factory`, `Seeding.run`.
+- [Sync](https://anilcancakir.com/magic_local_storage/docs/guides/sync.md): `SyncFeed`, `SyncLedger`, the wire protocol.
+- [Testing](https://anilcancakir.com/magic_local_storage/docs/guides/testing.md): in-memory database, fakes, resetting statics.
+- [Generators](https://anilcancakir.com/magic_local_storage/docs/guides/generators.md): `make:migration`, `make:seeder`, `make:factory`, `local_storage:install`.
+
+## Links
+
+- [README](https://github.com/anilcancakir/magic_local_storage/blob/master/README.md): install, the facades, the agent rules table.
+- [API reference](https://pub.dev/documentation/magic_local_storage/latest/): generated from the doc comments.
+- [Changelog](https://github.com/anilcancakir/magic_local_storage/blob/master/CHANGELOG.md): what changed in each version.
+- [Source](https://github.com/anilcancakir/magic_local_storage): issues and pull requests.
