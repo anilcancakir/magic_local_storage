@@ -16,7 +16,7 @@ Keep a local table consistent with a server across many devices with `SyncFeed`,
 <a name="basic-usage"></a>
 ## Basic Usage
 
-`SyncFeed.run` pushes every row this device wrote since its last push and, only when that push had no failure, pulls everything the server holds past this device's last pull. It never throws: a failure arrives in the `SyncReport`, and is logged through `Log.error`, because a sync is a convenience on top of a local store that already works without it.
+`SyncFeed.run` pushes every row this device wrote since its last push and, only when that push had no failure, pulls everything the server holds past this device's last pull. It never throws: a failure arrives in the `SyncReport`, because a sync is a convenience on top of a local store that already works without it. Only a thrown exception is also logged, through `Log.error`; a refused HTTP response (a non-2xx push or pull) returns a report with `failure` set and logs nothing.
 
 ```dart
 import 'package:magic/magic.dart';

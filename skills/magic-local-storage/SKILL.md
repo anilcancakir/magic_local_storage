@@ -1,8 +1,8 @@
 ---
 name: magic-local-storage
-description: "Store data locally in a Magic app with SQLite: DB and Schema facades, migrations, seeders, factories, the useLocal model store and SyncFeed."
+description: "Store data locally in a Magic app with SQLite: DB, Schema, migrations, seeders, factories, useLocal models and SyncFeed."
 version: 1.0.1
-when_to_use: "Use when code imports package:magic_local_storage or touches DB, Schema, Migration, Migrator, Seeding.run, Factory, SyncFeed, DatabaseServiceProvider or a useLocal model in a Magic app."
+when_to_use: "Use when code imports package:magic_local_storage or touches DB, Schema, Migrator, Seeding, Factory, SyncFeed or a useLocal model."
 ---
 
 # magic_local_storage
@@ -24,7 +24,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. The installer adds `Dat
 
 1. A `useLocal => true` model needs this package. With no store bound, every persistence leg (`find`, `all`, `save`, `delete`, `refresh`) throws a `StateError` naming `magic_local_storage`, and it is thrown before the leg's own `try`, so no fallback hides it. Fix it by registering the provider, never by catching the error.
 2. The store keeps only the attributes the table has a column for. A typo in an attribute name is dropped without an error, so check the table when a value does not persist.
-3. Run the migration before the first save. A table with no columns makes the store write nothing and the insert answers `0`.
+3. Run the migration before the first save. A table that does not exist makes the store throw a `StateError` naming it, so `save()` answers `false` on a local-only model and `Factory.create()` throws.
 4. `model.query()` returns raw row maps. Booleans arrive as `0` and `1`; hydrate through the model to apply its casts.
 5. Another engine or a test double implements core's `LocalModelStore` and binds it at `local_model_store`.
 
@@ -44,7 +44,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. The installer adds `Dat
 2. Values are bound. A plain table or column name (`order`, `users.id`) is quoted, so `order` works as a column in `where`, `orderBy`, `value` and `pluck`; any other text (`lower(email)`, `name COLLATE NOCASE`, `RANDOM()`) and every `select([...])` entry is raw SQL. Never pass user input as a name.
 3. `where` takes `=`, `==`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `glob`, `not glob`, `match`, `is` and `is not`; `orderBy` takes `asc` or `desc`. Anything else, `in` included, throws an `ArgumentError`.
 4. A `null` value in `where` becomes `IS NULL` (`=`, `==`, `is`, two arguments) or `IS NOT NULL` (`!=`, `<>`, `is not`); prefer `whereNull` and `whereNotNull`. Constraints are always `AND`ed.
-5. `insert` or `update` on a table that does not exist throws a `StateError` naming it, so `save()` on a `useLocal` model answers `false` until its migration ran.
+5. `insert` or `update` on a table that does not exist throws a `StateError` naming it, so `save()` on a local-only model answers `false` until its migration ran.
 6. `insertAll` is one insert per record and not atomic; wrap it in `DB.transaction`.
 7. `DB.transaction` owns its transaction. A `DB.commit()` or `DB.rollback()` inside it makes the call throw. For manual control use `beginTransaction`, `commit` and `rollback` throughout and do not mix the two.
 

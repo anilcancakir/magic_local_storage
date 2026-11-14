@@ -259,8 +259,8 @@ Future<void> checkSync(SyncFeed feed) async {
 | State | Reset |
 |:------|:------|
 | The `DatabaseManager` connection and schema cache | `DatabaseManager().dispose()` in `tearDown`; set a new connection in `setUp`. |
-| A faked network | `Http.unfake()` after `Http.fake`. |
-| The faked log | `Log.fake()` again in `setUp`; the container reset drops it. |
+
+`Http.fake` and `Log.fake` bind a container instance, so the container reset above clears them: call the fake again in each `setUp`. `Http.unfake()` is only for restoring the real driver inside a test.
 
 Call `MagicApp.reset()` and `Magic.flush()` in every `setUp`, before you bind a store: the reset also clears the binding.
 
