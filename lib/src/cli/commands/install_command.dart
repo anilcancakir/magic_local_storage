@@ -110,7 +110,7 @@ class InstallCommand extends DowelInstallCommand {
 
     // 4. WasmSqlite3.loadFromUrl needs web/sqlite3.wasm at runtime; without
     //    it the first web boot fails with a WebAssembly TypeError.
-    if (result is Success && !isDryRun(ctx)) {
+    if (result is InstallSuccess && !isDryRun(ctx)) {
       await _maybeFetchSqliteWasm(ctx);
     }
 
@@ -172,13 +172,13 @@ class InstallCommand extends DowelInstallCommand {
   /// Turns a [TransactionResult] into a process exit code.
   int _renderResult(DowelContext ctx, TransactionResult result) {
     switch (result) {
-      case Success():
+      case InstallSuccess():
         ctx.output.success('Magic Local Storage installed.');
         return 0;
-      case DryRun(opCount: final count):
+      case InstallDryRun(opCount: final count):
         ctx.output.info('Dry-run: $count op(s) staged; nothing was written.');
         return 0;
-      case Conflict(conflicts: final conflicts):
+      case InstallConflict(conflicts: final conflicts):
         ctx.output.error(
           'Refused: ${conflicts.length} file(s) differ from what this plugin '
           'last wrote. Re-run with --force to overwrite anyway.',
@@ -187,7 +187,7 @@ class InstallCommand extends DowelInstallCommand {
           ctx.output.warning('  ${conflict.absPath} (${conflict.reason})');
         }
         return 1;
-      case Error(error: final message, rolledBack: final rolledBack):
+      case InstallError(error: final message, rolledBack: final rolledBack):
         ctx.output.error('Install failed: $message');
         if (!rolledBack) {
           ctx.output.warning(
