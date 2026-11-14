@@ -65,15 +65,15 @@ Future<void> main() async {
 
 ## Docs
 
-- [Installation](https://anilcancakir.com/magic_local_storage/docs/getting-started/installation.md): install, requirements, registering the provider and config, web setup.
-- [Configuration](https://anilcancakir.com/magic_local_storage/docs/basics/configuration.md): the `database` config, platforms, `DatabaseManager`.
-- [Queries](https://anilcancakir.com/magic_local_storage/docs/basics/queries.md): `DB`, `QueryBuilder`, transactions.
-- [Migrations](https://anilcancakir.com/magic_local_storage/docs/basics/migrations.md): `Migration`, `Schema`, `Blueprint`, `Migrator`.
-- [Models](https://anilcancakir.com/magic_local_storage/docs/basics/models.md): `useLocal`, `LocalModelStore`, `QueryModelStore`, the `StateError`.
-- [Seeding](https://anilcancakir.com/magic_local_storage/docs/basics/seeding.md): `Seeder`, `Factory`, `Seeding.run`.
-- [Sync](https://anilcancakir.com/magic_local_storage/docs/guides/sync.md): `SyncFeed`, `SyncLedger`, the wire protocol.
-- [Testing](https://anilcancakir.com/magic_local_storage/docs/guides/testing.md): in-memory database, fakes, resetting statics.
-- [Generators](https://anilcancakir.com/magic_local_storage/docs/guides/generators.md): `make:migration`, `make:seeder`, `make:factory`, `local_storage:install`.
+- [Installation](https://anilcancakir.com/magic/docs/local_storage/getting-started/installation.md): install, requirements, registering the provider and config, web setup.
+- [Configuration](https://anilcancakir.com/magic/docs/local_storage/basics/configuration.md): the `database` config, platforms, `DatabaseManager`.
+- [Queries](https://anilcancakir.com/magic/docs/local_storage/basics/queries.md): `DB`, `QueryBuilder`, transactions.
+- [Migrations](https://anilcancakir.com/magic/docs/local_storage/basics/migrations.md): `Migration`, `Schema`, `Blueprint`, `Migrator`.
+- [Models](https://anilcancakir.com/magic/docs/local_storage/basics/models.md): `useLocal`, `LocalModelStore`, `QueryModelStore`, the `StateError`.
+- [Seeding](https://anilcancakir.com/magic/docs/local_storage/basics/seeding.md): `Seeder`, `Factory`, `Seeding.run`.
+- [Sync](https://anilcancakir.com/magic/docs/local_storage/guides/sync.md): `SyncFeed`, `SyncLedger`, the wire protocol.
+- [Testing](https://anilcancakir.com/magic/docs/local_storage/guides/testing.md): in-memory database, fakes, resetting statics.
+- [Generators](https://anilcancakir.com/magic/docs/local_storage/guides/generators.md): `make:migration`, `make:seeder`, `make:factory`, `local_storage:install`.
 
 ## Links
 
