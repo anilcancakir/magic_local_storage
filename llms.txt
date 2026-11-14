@@ -37,7 +37,7 @@ Future<void> main() async {
 ## API
 
 - `DB` (facade, all static): `table(name)` returns a `QueryBuilder`; `select(sql, [params])` returns rows synchronously; `insert` returns the last row id; `update` and `delete` return the changed row count; `statement(sql, [params])`; `transaction(callback)`, `beginTransaction()`, `commit()`, `rollback()`.
-- `QueryBuilder`: `select`, `where(column, [operator], value)`, `whereNull`, `whereNotNull`, `orderBy`, `limit`, `offset`; `get`, `first`, `value`, `pluck`, `count`, `exists`, `insert`, `insertAll`, `update`, `delete`, `truncate`. Writes drop keys that are not columns of the table and throw a `StateError` naming a table that does not exist. Operators: `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `is`, `is not`; directions `asc`, `desc`; anything else throws an `ArgumentError`. Table and column names are quoted; `select` entries are raw SQL.
+- `QueryBuilder`: `select`, `where(column, [operator], value)`, `whereNull`, `whereNotNull`, `orderBy`, `limit`, `offset`; `get`, `first`, `value`, `pluck`, `count`, `exists`, `insert`, `insertAll`, `update`, `delete`, `truncate`. Writes drop keys that are not columns of the table and throw a `StateError` naming a table that does not exist. Operators: `=`, `==`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `glob`, `not glob`, `match`, `is`, `is not`; directions `asc`, `desc`; anything else throws an `ArgumentError`. Plain table and column names (`order`, `users.id`) are quoted; any other text, such as `lower(email)`, and every `select` entry is raw SQL.
 - `Schema` (facade): `create(table, callback)`, `table(table, callback)`, `drop`, `dropIfExists`, `rename`, `hasTable`, `hasColumn`, `getColumns` (the last three return futures). `Blueprint`: `id`, `string`, `text`, `integer`, `bigInteger`, `boolean`, `real`, `blob`, `timestamps`, `dropColumn`, `renameColumn`; modifiers `nullable()`, `unique()`, `defaultValue(v)`.
 - `Migration`: `name` (the ledger key), synchronous `up()` and `down()`. `Migrator()`: `run`, `rollback`, `reset`, `refresh`, `getExecuted`, `getPending`; the ledger table is `magic_migrations`; one `run` is one `SAVEPOINT`.
 - `Seeder`: `run()`, `call(seeders)`. `Seeding.run(List<Seeder>)` replaces core's removed `Magic.seed`. `Factory<T extends Model>`: `definition()`, `newInstance()`, `newFactory()`, `faker`; `count(n)`, `state(map)`, `create()`, `make()`, `raw()`.
@@ -60,7 +60,7 @@ Future<void> main() async {
 - Keep `up()` and `down()` synchronous (`void`, never `async`), and never call `DB.commit()` or `DB.rollback()` inside a migration or `DB.transaction`.
 - There is no migration discovery: pass every migration to `Migrator().run`, in order. Never rename a released migration's `name`.
 - Use `Seeding.run([...])`, not `Magic.seed`. Guard it so a restart does not seed twice.
-- Prefer `whereNull` and `whereNotNull`; a `null` value with `>` or `like` throws. Names are quoted but `select` entries are raw SQL, so never pass user input as a table, column, operator or direction.
+- Prefer `whereNull` and `whereNotNull`; a `null` value with `>` or `like` throws. Plain names are quoted but expressions and `select` entries are raw SQL, so never pass user input as a table, column, operator or direction.
 - In tests, call `MagicApp.reset()` and `Magic.flush()` in `setUp`, then bind a store over `DatabaseManager().setConnection(sqlite3.openInMemory())`, and call `DatabaseManager().dispose()` in `tearDown`: the manager is a singleton that `Magic.flush()` does not clear.
 
 ## Docs

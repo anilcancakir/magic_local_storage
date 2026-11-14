@@ -22,16 +22,31 @@ void main() {
       expect(sql, contains('"updated_at" TEXT'));
     });
 
-    test('quotes table and column names, doubling an embedded quote', () {
+    test('quotes plain table and column names', () {
       final blueprint = Blueprint('order');
       blueprint.integer('group');
-      blueprint.string('say "hi"');
 
       final sql = blueprint.toSql();
 
       expect(sql, startsWith('CREATE TABLE IF NOT EXISTS "order" ('));
       expect(sql, contains('"group" INTEGER NOT NULL'));
-      expect(sql, contains('"say ""hi""" TEXT NOT NULL'));
+    });
+
+    test('writes a hand-quoted name as given', () {
+      final blueprint = Blueprint('"order"');
+      blueprint.integer('"group"');
+
+      final sql = blueprint.toSql();
+
+      expect(sql, startsWith('CREATE TABLE IF NOT EXISTS "order" ('));
+      expect(sql, contains('"group" INTEGER NOT NULL'));
+    });
+
+    test('quotes each part of a schema-qualified table name', () {
+      expect(
+        Blueprint('cache.items').toSql(),
+        startsWith('CREATE TABLE IF NOT EXISTS "cache"."items" ('),
+      );
     });
 
     test('escapes a single quote in a string default', () {

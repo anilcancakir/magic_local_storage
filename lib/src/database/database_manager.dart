@@ -113,9 +113,7 @@ class DatabaseManager {
     }
 
     // 2. Read the columns; column 1 of table_info is 'name'.
-    final result = connection.select(
-      'PRAGMA table_info(${quoteIdentifier(table)})',
-    );
+    final result = connection.select(_tableInfoSql(table));
     final columns = result.map((row) => row['name'] as String).toList();
 
     // 3. Cache only a table that exists.
@@ -124,6 +122,19 @@ class DatabaseManager {
     }
 
     return columns;
+  }
+
+  /// The `PRAGMA table_info` statement for [table]. A schema prefix moves in
+  /// front of the pragma (`cache.items` reads `PRAGMA "cache".table_info(
+  /// "items")`), since the pragma argument is a bare table name.
+  String _tableInfoSql(String table) {
+    final List<String> parts = table.split('.');
+    if (isPlainName(table) && parts.length == 2) {
+      return 'PRAGMA ${quoteIdentifier(parts.first)}'
+          '.table_info(${quoteIdentifier(parts.last)})';
+    }
+
+    return 'PRAGMA table_info(${quoteIdentifier(table)})';
   }
 
   /// Check if a table has a specific column.

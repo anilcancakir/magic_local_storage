@@ -82,6 +82,7 @@ class QueryBuilder {
   /// The operators [where] writes into the SQL, in lower case.
   static const Set<String> _operators = {
     '=',
+    '==',
     '!=',
     '<>',
     '<',
@@ -90,6 +91,9 @@ class QueryBuilder {
     '>=',
     'like',
     'not like',
+    'glob',
+    'not glob',
+    'match',
     'is',
     'is not',
   };
@@ -122,7 +126,8 @@ class QueryBuilder {
   ///
   /// Each entry is a raw SQL fragment written into the `SELECT` list as given,
   /// so an expression such as `COUNT(*) AS total` works and a keyword column
-  /// has to be quoted by hand (`'"order"'`). Never pass user input here.
+  /// has to be quoted by hand (`'"order"'`), or read through [value] or
+  /// [pluck]. Never pass user input here.
   ///
   /// ```dart
   /// DB.table('users').select(['name', 'email']).get();
@@ -134,14 +139,15 @@ class QueryBuilder {
 
   /// Add a where clause.
   ///
-  /// The column is quoted as an identifier and the value is bound. The
-  /// operator is one of `=`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`,
-  /// `not like`, `is` and `is not`, in any case. A `null` value compiles to
-  /// `IS NULL` for `=` and `is`, and to `IS NOT NULL` for `!=`, `<>` and
-  /// `is not`.
+  /// A plain [column] (`order`, `users.id`) is quoted as an identifier; any
+  /// other text, such as `lower(email)`, is written as given. The value is
+  /// bound. The operator is one of `=`, `==`, `!=`, `<>`, `<`, `<=`, `>`,
+  /// `>=`, `like`, `not like`, `glob`, `not glob`, `match`, `is` and
+  /// `is not`, in any case. A `null` value compiles to `IS NULL` for `=`, `==`
+  /// and `is`, and to `IS NOT NULL` for `!=`, `<>` and `is not`.
   ///
-  /// Throws an [ArgumentError] for any other operator, or for `null` with an
-  /// ordering or `like` operator.
+  /// Throws an [ArgumentError] for any other operator, or for `null` with any
+  /// other operator.
   ///
   /// ```dart
   /// // Equality
@@ -167,7 +173,7 @@ class QueryBuilder {
     // 3. A null value never matches through `= ?`; route it to IS [NOT] NULL.
     if (value == null) {
       return switch (operator) {
-        '=' || 'is' => whereNull(column),
+        '=' || '==' || 'is' => whereNull(column),
         '!=' || '<>' || 'is not' => whereNotNull(column),
         _ => throw ArgumentError.value(
           value,
@@ -203,8 +209,9 @@ class QueryBuilder {
 
   /// Add an order by clause.
   ///
-  /// The column is quoted as an identifier. Throws an [ArgumentError] when
-  /// [direction] is not `asc` or `desc`, in any case.
+  /// A plain [column] is quoted as an identifier; an expression such as
+  /// `name COLLATE NOCASE` or `RANDOM()` is written as given. Throws an
+  /// [ArgumentError] when [direction] is not `asc` or `desc`, in any case.
   ///
   /// ```dart
   /// DB.table('posts').orderBy('created_at', 'desc');
@@ -275,26 +282,33 @@ class QueryBuilder {
 
   /// Get a single value from the first result.
   ///
+  /// A plain [column] is quoted, so a keyword column such as `order` works;
+  /// an expression is selected as given.
+  ///
   /// ```dart
   /// final name = await DB.table('users')
   ///   .where('id', 1)
   ///   .value<String>('name');
   /// ```
   Future<T?> value<T>(String column) async {
-    _selectColumns = [column];
+    _selectColumns = [wrapIdentifier(column)];
     final row = await first();
-    return row?[column] as T?;
+    return row?[resultKey(column)] as T?;
   }
 
   /// Get a list of values for a single column.
+  ///
+  /// A plain [column] is quoted, so a keyword column such as `order` works;
+  /// an expression is selected as given.
   ///
   /// ```dart
   /// final emails = await DB.table('users').pluck<String>('email');
   /// ```
   Future<List<T>> pluck<T>(String column) async {
-    _selectColumns = [column];
+    _selectColumns = [wrapIdentifier(column)];
     final results = await get();
-    return results.map((row) => row[column] as T).toList();
+    final String key = resultKey(column);
+    return results.map((row) => row[key] as T).toList();
   }
 
   /// Count the number of matching rows.
@@ -426,7 +440,7 @@ class QueryBuilder {
   // Private Helpers
   // ---------------------------------------------------------------------------
 
-  /// The table name quoted as an identifier.
+  /// The table name, quoted when it is a plain name.
   String get _wrappedTable => wrapIdentifier(_table);
 
   /// Lower-cases [operator] and checks it against [_operators].

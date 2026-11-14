@@ -113,7 +113,7 @@ Future<void> main() async {
 | `DB.transaction(callback)` | One transaction; rolls back when the callback throws. |
 | `Schema.create`, `Schema.table`, `Schema.drop`, `Schema.dropIfExists`, `Schema.rename` | Table changes. |
 
-Writes keep only the keys the table has a column for, so a stray attribute never fails an insert; a write to a table that does not exist yet throws a `StateError` naming it. Table and column names are quoted, so a column called `order` works; `select([...])` entries stay raw SQL.
+Writes keep only the keys the table has a column for, so a stray attribute never fails an insert; a write to a table that does not exist yet throws a `StateError` naming it. Plain table and column names are quoted, so a column called `order` works; an expression such as `lower(email)` or `name COLLATE NOCASE` is written as given, and `select([...])` entries stay raw SQL.
 
 ## Models
 
@@ -256,7 +256,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 | Pass every migration to `Migrator().run`, in order | There is no discovery, so an unlisted migration never runs. |
 | Call `Seeding.run([...])` for seeders | `Magic.seed` is gone from core. |
 | Prefer `whereNull` and `whereNotNull` for null checks | `where(column, null)` also compiles to `IS NULL`, but `where(column, '>', null)` throws an `ArgumentError`. |
-| Never put user input in a table, column, `select` entry, operator or order direction | Only values are bound. Names are quoted but still choose what is read; `select` entries are raw SQL; an operator outside the supported list or a direction other than `asc`/`desc` throws an `ArgumentError`. |
+| Never put user input in a table, column, `select` entry, operator or order direction | Only values are bound. Plain names are quoted but still choose what is read; any other column text and every `select` entry is raw SQL; an operator outside `=`, `==`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `glob`, `not glob`, `match`, `is`, `is not`, or a direction other than `asc`/`desc`, throws an `ArgumentError`. |
 | Set a new connection in `setUp` and call `DatabaseManager().dispose()` in `tearDown` | The manager is a singleton that `Magic.flush()` does not clear. |
 
 ## Dependencies

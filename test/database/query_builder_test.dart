@@ -196,6 +196,108 @@ void main() {
         await DB.table('order').truncate();
         expect(await DB.table('order').exists(), isFalse);
       });
+
+      test('pluck and value read a keyword column by its bare name', () async {
+        await DB.table('order').insert({'order': 2, 'group': 'b'});
+        await DB.table('order').insert({'order': 1, 'group': 'a'});
+
+        expect(await DB.table('order').orderBy('order').pluck<int>('order'), [
+          1,
+          2,
+        ]);
+        expect(
+          await DB.table('order').where('group', 'b').value<int>('order'),
+          2,
+        );
+      });
+
+      test('a hand-quoted name is written as given', () async {
+        await DB.table('order').insert({'order': 5, 'group': 'a'});
+        await DB.table('order').insert({'order': 4, 'group': 'b'});
+
+        final rows = await DB
+            .table('order')
+            .where('"group"', 'b')
+            .orderBy('"order"')
+            .get();
+
+        expect(rows.single['order'], 4);
+      });
+    });
+
+    group('expressions in column positions', () {
+      setUp(() {
+        db.execute('''
+          CREATE TABLE events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            created_at TEXT,
+            data TEXT
+          )
+        ''');
+        db.execute('''
+          INSERT INTO events (name, created_at, data) VALUES
+            ('beta', '2026-01-01 10:00:00', '{"a": 1}'),
+            ('Alpha', '2026-03-01 10:00:00', '{"a": 2}'),
+            ('gamma', '2026-05-01 10:00:00', '{"a": 3}')
+        ''');
+      });
+
+      test('orderBy keeps a COLLATE expression raw', () async {
+        final rows = await DB
+            .table('events')
+            .orderBy('name COLLATE NOCASE')
+            .pluck<String>('name');
+
+        expect(rows, ['Alpha', 'beta', 'gamma']);
+      });
+
+      test('orderBy keeps a function call raw', () async {
+        expect(
+          await DB.table('events').orderBy('RANDOM()').get(),
+          hasLength(3),
+        );
+      });
+
+      test('where keeps lower() raw', () async {
+        final rows = await DB
+            .table('users')
+            .where('lower(email)', 'alice@example.com')
+            .get();
+
+        expect(rows.single['name'], 'Alice');
+      });
+
+      test('where keeps date() raw', () async {
+        final count = await DB
+            .table('events')
+            .where('date(created_at)', '>=', '2026-03-01')
+            .count();
+
+        expect(count, 2);
+      });
+
+      test('where and pluck keep json_extract raw', () async {
+        final rows = await DB
+            .table('events')
+            .where(r"json_extract(data, '$.a')", '>', 1)
+            .orderBy(r"json_extract(data, '$.a')", 'desc')
+            .pluck<int>(r"json_extract(data, '$.a')");
+
+        expect(rows, [3, 2]);
+      });
+    });
+
+    test('a schema-qualified table is read and written', () async {
+      db.execute("ATTACH DATABASE ':memory:' AS cache");
+      db.execute('CREATE TABLE cache.items (id INTEGER PRIMARY KEY, label)');
+
+      expect(await DatabaseManager().getColumns('cache.items'), [
+        'id',
+        'label',
+      ]);
+      await DB.table('cache.items').insert({'label': 'kept'});
+      expect(await DB.table('cache.items').pluck<String>('label'), ['kept']);
     });
 
     test('a table-qualified column still addresses the column', () async {
@@ -213,6 +315,9 @@ void main() {
         // Ages are 25, 30 and 35; names Alice, Bob and Charlie.
         final List<(String, String, Object, int)> cases = [
           ('age', '=', 30, 1),
+          ('age', '==', 30, 1),
+          ('name', 'glob', 'B*', 1),
+          ('name', 'NOT GLOB', 'B*', 2),
           ('age', '!=', 30, 2),
           ('age', '<>', 30, 2),
           ('age', '<', 30, 1),
@@ -232,6 +337,20 @@ void main() {
               .count();
           expect(count, expected, reason: 'operator $operator');
         }
+      });
+
+      test('match searches an FTS5 table', () async {
+        db.execute('CREATE VIRTUAL TABLE notes USING fts5(body)');
+        db.execute(
+          "INSERT INTO notes (body) VALUES ('buy milk'), ('walk the dog')",
+        );
+
+        final rows = await DB
+            .table('notes')
+            .where('notes', 'MATCH', 'milk')
+            .get();
+
+        expect(rows.single['body'], 'buy milk');
       });
 
       test('rejects an unsupported operator with an ArgumentError', () {

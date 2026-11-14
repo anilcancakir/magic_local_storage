@@ -46,7 +46,12 @@ class ConnectionFactory implements ConnectionFactoryContract {
       _sqlite3!.registerVirtualFileSystem(_fileSystem!, makeDefault: true);
     }
 
-    // Open and return the database
-    return _sqlite3!.open(dbName);
+    // Open the database. A double-quoted name must stay an identifier, so a
+    // mistyped quoted column fails with "no such column" instead of being
+    // compared as a string literal.
+    final CommonDatabase db = _sqlite3!.open(dbName);
+    db.config.doubleQuotedStringLiterals = false;
+
+    return db;
   }
 }

@@ -50,8 +50,9 @@ class ColumnDefinition {
 
   /// Generate the SQL for this column.
   ///
-  /// The name is a quoted identifier and a string default a quoted literal,
-  /// so a keyword column (`order`) or a default holding `'` stays valid SQL.
+  /// A plain name is quoted as an identifier and a string default as a
+  /// literal, so a keyword column (`order`) or a default holding `'` stays
+  /// valid SQL; any other name is written as given.
   String toSql() {
     final parts = <String>[quoteIdentifier(name), type];
 
@@ -278,8 +279,8 @@ class Blueprint {
     _columnsToRename[from] = to;
   }
 
-  /// Generate the CREATE TABLE SQL statement, with the table and every column
-  /// name quoted as an identifier.
+  /// Generate the CREATE TABLE SQL statement, with every plain table and
+  /// column name quoted as an identifier.
   String toSql() {
     final columnsSql = _columns.map((col) => col.toSql()).join(', ');
     return 'CREATE TABLE IF NOT EXISTS ${wrapIdentifier(tableName)} '

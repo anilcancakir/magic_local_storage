@@ -284,14 +284,13 @@ class Migrator {
 
   /// Create the migrations tracking table if it doesn't exist.
   ///
-  /// The cache line is not housekeeping. A raw `execute` changes the schema
-  /// behind [DatabaseManager]'s back, and `getColumns` caches the EMPTY answer
-  /// a missing table gives. [_recordMigration] goes through `QueryBuilder`,
-  /// which filters every key against that cache, and an empty filter makes
-  /// `insert` return 0 without inserting and without throwing
-  /// (`query_builder.dart:278-280`). So anything that read this table's
-  /// columns before it existed would leave every migration applied and never
-  /// recorded, and re-applied on every launch for ever.
+  /// A raw `execute` changes the schema behind [DatabaseManager]'s back, so
+  /// the cache entry for this table is cleared afterwards. `getColumns` never
+  /// caches a missing table, and [_recordMigration]'s `QueryBuilder.insert`
+  /// throws a `StateError` for a table with no columns, so a ledger write can
+  /// fail loudly but never be skipped silently; clearing the entry keeps a
+  /// column list cached from an older shape of the table from filtering the
+  /// ledger row.
   Future<void> _ensureMigrationsTable() async {
     _db.connection.execute('''
       CREATE TABLE IF NOT EXISTS $_table (
