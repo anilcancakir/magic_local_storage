@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://anilcancakir.com/magic_local_storage">Documentation</a> ·
+  <a href="https://anilcancakir.com/magic/docs/local_storage">Documentation</a> ·
   <a href="https://pub.dev/packages/magic_local_storage">pub.dev</a> ·
   <a href="https://github.com/anilcancakir/magic_local_storage/issues">Issues</a>
 </p>
@@ -265,7 +265,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 
 ## Links
 
-- [Documentation](https://anilcancakir.com/magic_local_storage/docs/getting-started/installation): installation, configuration, queries, migrations, models, seeding, sync, testing and generators
+- [Documentation](https://anilcancakir.com/magic/docs/local_storage/getting-started/installation): installation, configuration, queries, migrations, models, seeding, sync, testing and generators
 - [API reference](https://pub.dev/documentation/magic_local_storage/latest/)
 - [llms.txt](llms.txt) and the [agent skill](skills/magic-local-storage/SKILL.md) for AI coding agents: `npx skills add anilcancakir/magic_local_storage`
 - [Changelog](CHANGELOG.md)

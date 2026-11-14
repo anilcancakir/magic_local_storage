@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- The package page and every documentation link name the new location under `https://anilcancakir.com/magic/local_storage` (the pub.dev page carries it from the next release).
+
 ### Fixed
 
 - Saving a `useLocal` model, or calling `insert` or `update`, on a table that does not exist yet now throws a `StateError` naming the table instead of reporting success, so `save()` returns `false` before the migration ran; a table created later is seen without a restart.
