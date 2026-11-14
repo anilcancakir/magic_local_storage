@@ -71,7 +71,7 @@ Every feature, fix, or refactor goes through red-green-refactor: write a failing
 | Registering `make:migration`, `make:seeder` or `make:factory` in core too | The dowel dispatcher exits on a command-name collision; this provider is their only registrar |
 | Importing Flutter or the runtime barrel from `lib/src/cli/` | The dispatcher is a pure Dart process; the CLI tree imports `dart:` libraries and the dowel barrel only |
 | Publishing a `lib/config/database.dart` in `install.yaml` | `databaseConfig` is exported by the barrel; a second getter of that name makes every import ambiguous |
-| Bumping `sqlite3` without `InstallCommand.sqliteWasmRelease` | A wasm from another release than the Dart bindings corrupts data at runtime; change both together |
+| Bumping `sqlite3` without `InstallCommand.sqliteWasmRelease` | The installer falls back to that release's wasm when it cannot read the resolved `sqlite3` version, and the package needs the wasm built for it; keep it at the constraint's lower bound |
 | Making `Migration.up()` or `down()` async, or committing inside one | `Migrator.run` cannot await a `void`, and its savepoint owns the transaction; the commit guard throws a `StateError` |
 | Calling `Schema.hasTable` or `DatabaseManager.getColumns` from a migration | They return futures; read `PRAGMA table_info` with `DB.select` |
 | Throwing from `SyncFeed.run`, or advancing the mark from an adopted row | `run` answers a `SyncReport`; only the push advances the mark |

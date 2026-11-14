@@ -46,6 +46,24 @@ class TestUser extends Model with HasTimestamps, InteractsWithPersistence {
       InteractsWithPersistence.allModels<TestUser>(TestUser.new);
 }
 
+/// A model whose table no migration has created yet.
+class PendingNote extends Model with InteractsWithPersistence {
+  @override
+  String get table => 'pending_notes';
+
+  @override
+  String get resource => 'pending_notes';
+
+  @override
+  List<String> get fillable => ['title'];
+
+  @override
+  bool get useLocal => true;
+
+  @override
+  bool get useRemote => false;
+}
+
 void main() {
   group('InteractsWithPersistence', () {
     late Database db;
@@ -171,5 +189,30 @@ void main() {
       await user.refresh();
       expect(user.name, 'Updated');
     });
+
+    test(
+      'save before the migration ran fails, and succeeds after it',
+      () async {
+        final early = PendingNote()..fill({'title': 'Too early'});
+
+        expect(await early.save(), isFalse);
+        expect(early.exists, isFalse);
+        expect(early.id, isNull);
+
+        // A raw CREATE TABLE does not clear the schema cache, so this also
+        // proves the failed save left no empty column list cached.
+        db.execute(
+          'CREATE TABLE pending_notes (id INTEGER PRIMARY KEY, title TEXT)',
+        );
+        final note = PendingNote()..fill({'title': 'After the migration'});
+
+        expect(await note.save(), isTrue);
+        expect(note.id, 1);
+        expect(
+          db.select('SELECT title FROM pending_notes').first['title'],
+          'After the migration',
+        );
+      },
+    );
   });
 }

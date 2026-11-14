@@ -71,11 +71,15 @@ void main() {
 
 | Constraint | Meaning |
 |:-----------|:--------|
-| `select(columns)` | Restricts the columns; the default is `*`. |
+| `select(columns)` | Restricts the columns; the default is `*`. Each entry is a raw SQL fragment, see below. |
 | `where(column, value)`, `where(column, operator, value)` | An `AND` condition; two arguments mean `=`. |
 | `whereNull(column)`, `whereNotNull(column)` | `IS NULL` and `IS NOT NULL`. |
-| `orderBy(column, [direction])` | `asc` by default; repeat for a second sort key. |
+| `orderBy(column, [direction])` | `asc` by default, `asc` or `desc` in any case; repeat for a second sort key. |
 | `limit(count)`, `offset(count)` | Paging. |
+
+`where` accepts the operators `=`, `==`, `!=`, `<>`, `<`, `<=`, `>`, `>=`, `like`, `not like`, `glob`, `not glob`, `match`, `is` and `is not`, in any case; any other operator, `in` included, throws an `ArgumentError`, and so does an `orderBy` direction other than `asc` or `desc`. A `null` value becomes `IS NULL` with `=`, `==` or `is` (and in the two-argument form) and `IS NOT NULL` with `!=`, `<>` or `is not`; with any other operator it throws an `ArgumentError`.
+
+A plain name, letters, digits and underscores with optional dotted parts (`order`, `users.id`, `cache.items`), is quoted as an identifier wherever the builder takes a table or column: `table`, `where`, `whereNull`, `whereNotNull`, `orderBy`, `value`, `pluck`, `insert` and `update`. So a keyword column such as `order` or `group` works, and `value('order')` and `pluck('order')` read it back under its bare name. Anything else is written exactly as given, so an expression keeps working: `orderBy('name COLLATE NOCASE')`, `orderBy('RANDOM()')`, `where('lower(email)', email)`, `where('date(created_at)', '>=', day)` and `json_extract(data, '$.a')`; a hand-quoted `'"order"'` stays as written. `select([...])` entries are always raw SQL, so an expression such as `COUNT(*) AS total` works there and a keyword column has to be quoted by hand: `select(['"order"'])`.
 
 | Terminal | Returns | Meaning |
 |:---------|:--------|:--------|
@@ -150,13 +154,17 @@ Future<void> main() async {
 
 `QueryBuilder.insert` and `update` drop every key that is not a column of the table, using the cached `PRAGMA table_info` of `DatabaseManager`. A map that carries a computed or remote-only attribute therefore never fails the write; the price is that a typo in a column name is dropped without an error. When `insert` returns `0`, none of your keys matched a column.
 
+A table with no columns does not exist, so `insert` and `update` on it throw a `StateError` naming the table, usually because its migration has not run yet. The manager caches only tables that exist, so a table created afterwards, even by a raw `DB.statement`, is seen by the next write.
+
 <a name="gotchas"></a>
 ## Gotchas
 
 | Mistake | Fix |
 |:--------|:----|
-| Interpolating input into a table, column or direction | Only values are bound. Validate or whitelist names before they reach `table`, `where`, `orderBy` or `select`. |
-| `where('deleted_at', null)` | A null value never matches (`= NULL`); use `whereNull`. |
+| Passing input as a table, column, operator or direction | Only values are bound. A plain name is quoted but still chooses what is read, and any other text is raw SQL: whitelist names before they reach `table`, `where`, `orderBy` or `select`. |
+| `where('age', '>', null)` | It throws an `ArgumentError`; a `null` value only pairs with `=`, `==`, `!=`, `<>`, `is` and `is not`. |
+| `where('id', 'in', [1, 2])` | `in` is not supported and throws an `ArgumentError`; use a raw `DB.select` with one `?` per value. |
+| Writing to a table before its migration ran | It throws a `StateError` naming the table; run `Migrator().run` first. |
 | Looking for an `OR` condition | Constraints are always `AND`ed; write the `OR` in a raw `DB.select`. |
 | `insertAll` for an atomic bulk write | It is one insert per record; wrap it in `DB.transaction`. |
 | `DB.commit()` inside `DB.transaction` | Remove it; the block commits for you. |

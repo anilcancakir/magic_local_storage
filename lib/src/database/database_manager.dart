@@ -3,6 +3,7 @@ import 'package:magic/magic.dart';
 import 'package:sqlite3/common.dart';
 
 import 'connectors/connection_factory.dart';
+import 'query/identifier.dart';
 
 /// The Database Manager.
 ///
@@ -99,24 +100,41 @@ class DatabaseManager {
     await Event.dispatch(DatabaseConnected(defaultConnection));
   }
 
-  /// Get the column names for a table.
+  /// Get the column names for a table, or an empty list when it does not
+  /// exist.
   ///
-  /// Results are cached for performance. Use [clearSchemaCache] to refresh.
+  /// A table's columns are cached for performance; use [clearSchemaCache] to
+  /// refresh. A missing table is never cached, so a table created later by a
+  /// raw statement is seen on the next call.
   Future<List<String>> getColumns(String table) async {
-    // Return cached if available
+    // 1. Return cached if available.
     if (_schemaCache.containsKey(table)) {
       return _schemaCache[table]!;
     }
 
-    // Query table info using PRAGMA
-    final result = connection.select('PRAGMA table_info($table)');
-
-    // Extract column names (column 1 is 'name')
+    // 2. Read the columns; column 1 of table_info is 'name'.
+    final result = connection.select(_tableInfoSql(table));
     final columns = result.map((row) => row['name'] as String).toList();
 
-    // Cache and return
-    _schemaCache[table] = columns;
+    // 3. Cache only a table that exists.
+    if (columns.isNotEmpty) {
+      _schemaCache[table] = columns;
+    }
+
     return columns;
+  }
+
+  /// The `PRAGMA table_info` statement for [table]. A schema prefix moves in
+  /// front of the pragma (`cache.items` reads `PRAGMA "cache".table_info(
+  /// "items")`), since the pragma argument is a bare table name.
+  String _tableInfoSql(String table) {
+    final List<String> parts = table.split('.');
+    if (isPlainName(table) && parts.length == 2) {
+      return 'PRAGMA ${quoteIdentifier(parts.first)}'
+          '.table_info(${quoteIdentifier(parts.last)})';
+    }
+
+    return 'PRAGMA table_info(${quoteIdentifier(table)})';
   }
 
   /// Check if a table has a specific column.
@@ -126,12 +144,21 @@ class DatabaseManager {
   }
 
   /// Clear the schema cache for a specific table or all tables.
+  ///
+  /// A [table] clears every entry naming the same bare table, so `users`
+  /// also clears `main.users` and the reverse. Entries for a same-named table
+  /// in another attached schema are cleared too, which only costs a re-read.
   void clearSchemaCache([String? table]) {
-    if (table != null) {
-      _schemaCache.remove(table);
-    } else {
+    if (table == null) {
       _schemaCache.clear();
+
+      return;
     }
+
+    final String bare = resultKey(table);
+    _schemaCache.removeWhere(
+      (key, _) => key == table || resultKey(key) == bare,
+    );
   }
 
   /// Close the database connection.

@@ -92,6 +92,28 @@ void main() {
       );
     });
 
+    for (final String unsafe in <String>[
+      '../Escape',
+      'admin/../../Escape',
+      '/tmp/Escape',
+      r'..\Escape',
+    ]) {
+      test('refuses the unsafe name "$unsafe"', () async {
+        final cmd = MakeFactoryCommand(testRoot: projectRoot.path);
+        final ctx = buildCommandContext(cmd, <String>[unsafe]);
+
+        expect(await cmd.handle(ctx), 1);
+        expect(
+          (ctx.output as BufferedOutput).content,
+          contains('may not contain'),
+        );
+        expect(
+          projectRoot.listSync(recursive: true).whereType<File>(),
+          isEmpty,
+        );
+      });
+    }
+
     test('returns 1 when the name argument is missing', () async {
       final cmd = MakeFactoryCommand(testRoot: projectRoot.path);
       final code = await cmd.handle(buildCommandContext(cmd, <String>[]));

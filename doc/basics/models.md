@@ -83,7 +83,7 @@ Core defines the contract, `LocalModelStore`, and resolves it from the container
 | `delete(table, primaryKey, id)` | Removes the row. |
 | `upsert(table, primaryKey, id, data)` | Updates the row when it exists, inserts otherwise; used for rows pulled from the remote side. |
 
-`QueryModelStore` runs these through `QueryBuilder`. Writes keep only the attributes the table has a column for, so a model may carry a computed or remote-only attribute without breaking the insert. Booleans, dates and maps are stored as described in [Queries](./queries.md), and the model's `casts` restore them when a row is hydrated.
+`QueryModelStore` runs these through `QueryBuilder`. Writes keep only the attributes the table has a column for, so a model may carry a computed or remote-only attribute without breaking the insert. An `insert` or `update` on a table that does not exist throws a `StateError` naming it, which core's `save()` reports as `false`; a `delete` there fails with SQLite's own `no such table` error instead. Booleans, dates and maps are stored as described in [Queries](./queries.md), and the model's `casts` restore them when a row is hydrated.
 
 <a name="without-the-plugin"></a>
 ## Without the Plugin
@@ -177,7 +177,7 @@ void main() {
 | Mistake | Fix |
 |:--------|:----|
 | A `StateError` mentioning `local_model_store` | Register `DatabaseServiceProvider`, or bind a `LocalModelStore`, or set `useLocal` to `false`. |
-| Saving a model before its migration ran | The table has no columns yet, so the store writes nothing and the insert answers `0`; run `Migrator().run` first. |
+| Saving a model before its migration ran | The store throws a `StateError` naming the missing table, so `save()` returns `false` and the model keeps `exists == false` (core's `save` catches the error). Run `Migrator().run` first. |
 | A typo in `fillable` or an attribute name | A key without a column is dropped silently by the store. Check the table's columns. |
 | Reading a boolean column through `query()` | Raw rows hold `0` and `1`; hydrate through the model to apply its casts. |
 | Expecting `Magic.seed` | It is gone; use `Seeding.run`, see [Seeding](./seeding.md). |

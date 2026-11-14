@@ -1,4 +1,5 @@
 import '../database/database_manager.dart';
+import '../database/query/identifier.dart';
 import '../database/schema/blueprint.dart';
 
 /// Laravel-style Schema Facade.
@@ -100,7 +101,7 @@ class Schema {
   /// Schema.dropIfExists('temporary_data');
   /// ```
   static void dropIfExists(String table) {
-    _db.connection.execute('DROP TABLE IF EXISTS $table');
+    _db.connection.execute('DROP TABLE IF EXISTS ${wrapIdentifier(table)}');
     _db.clearSchemaCache(table);
   }
 
@@ -110,7 +111,7 @@ class Schema {
   /// Schema.drop('old_table');
   /// ```
   static void drop(String table) {
-    _db.connection.execute('DROP TABLE $table');
+    _db.connection.execute('DROP TABLE ${wrapIdentifier(table)}');
     _db.clearSchemaCache(table);
   }
 
@@ -156,7 +157,10 @@ class Schema {
   /// Schema.rename('old_name', 'new_name');
   /// ```
   static void rename(String from, String to) {
-    _db.connection.execute('ALTER TABLE $from RENAME TO $to');
+    // RENAME TO takes a bare table name: the table stays in its schema.
+    _db.connection.execute(
+      'ALTER TABLE ${wrapIdentifier(from)} RENAME TO ${quoteIdentifier(to)}',
+    );
     _db.clearSchemaCache(from);
     _db.clearSchemaCache(to);
   }

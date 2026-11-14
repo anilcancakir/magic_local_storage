@@ -1,4 +1,5 @@
 import '../database_manager.dart';
+import '../query/identifier.dart';
 
 /// Column definition for Blueprint.
 ///
@@ -48,8 +49,12 @@ class ColumnDefinition {
   }
 
   /// Generate the SQL for this column.
+  ///
+  /// A plain name is quoted as an identifier and a string default as a
+  /// literal, so a keyword column (`order`) or a default holding `'` stays
+  /// valid SQL; any other name is written as given.
   String toSql() {
-    final parts = <String>[name, type];
+    final parts = <String>[quoteIdentifier(name), type];
 
     if (isPrimaryKey) {
       parts.add('PRIMARY KEY');
@@ -69,7 +74,7 @@ class ColumnDefinition {
 
     if (defaultVal != null) {
       if (defaultVal is String) {
-        parts.add("DEFAULT '$defaultVal'");
+        parts.add('DEFAULT ${quoteString(defaultVal as String)}');
       } else if (defaultVal is bool) {
         parts.add('DEFAULT ${defaultVal ? 1 : 0}');
       } else {
@@ -82,7 +87,7 @@ class ColumnDefinition {
 
   /// Generate ALTER TABLE ADD COLUMN SQL.
   String toAddColumnSql(String tableName) {
-    return 'ALTER TABLE $tableName ADD COLUMN ${toSql()}';
+    return 'ALTER TABLE ${wrapIdentifier(tableName)} ADD COLUMN ${toSql()}';
   }
 }
 
@@ -274,10 +279,12 @@ class Blueprint {
     _columnsToRename[from] = to;
   }
 
-  /// Generate the CREATE TABLE SQL statement.
+  /// Generate the CREATE TABLE SQL statement, with every plain table and
+  /// column name quoted as an identifier.
   String toSql() {
     final columnsSql = _columns.map((col) => col.toSql()).join(', ');
-    return 'CREATE TABLE IF NOT EXISTS $tableName ($columnsSql)';
+    return 'CREATE TABLE IF NOT EXISTS ${wrapIdentifier(tableName)} '
+        '($columnsSql)';
   }
 
   /// Execute the CREATE TABLE statement.
@@ -294,6 +301,7 @@ class Blueprint {
   /// Execute table modifications (ALTER TABLE statements).
   void _executeModifications() {
     final db = DatabaseManager();
+    final table = wrapIdentifier(tableName);
 
     // Add new columns
     for (final col in _columns) {
@@ -304,13 +312,14 @@ class Blueprint {
     // Rename columns
     for (final entry in _columnsToRename.entries) {
       final sql =
-          'ALTER TABLE $tableName RENAME COLUMN ${entry.key} TO ${entry.value}';
+          'ALTER TABLE $table RENAME COLUMN ${quoteIdentifier(entry.key)} '
+          'TO ${quoteIdentifier(entry.value)}';
       db.connection.execute(sql);
     }
 
     // Drop columns
     for (final colName in _columnsToDrop) {
-      final sql = 'ALTER TABLE $tableName DROP COLUMN $colName';
+      final sql = 'ALTER TABLE $table DROP COLUMN ${quoteIdentifier(colName)}';
       db.connection.execute(sql);
     }
 

@@ -12,6 +12,9 @@ class {{ className }} extends Migration {
 
   @override
   void down() {
-    // Reverse the migration.
+    // Replace the throw with the statements that reverse up(). A down() that
+    // does nothing would let a rollback delete the ledger row of a migration
+    // that is still applied.
+    throw UnsupportedError('{{ fullName }} has no rollback yet.');
   }
 }

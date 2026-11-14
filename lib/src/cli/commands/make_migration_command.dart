@@ -1,6 +1,7 @@
 import 'package:dowel/dowel.dart';
 
 import '../local_storage_stub_loader.dart';
+import 'refuses_unsafe_names.dart';
 
 /// The Make Migration Command.
 ///
@@ -20,7 +21,8 @@ import '../local_storage_stub_loader.dart';
 ///
 /// Creates a file named `m_YYYYMMDDHHMMSS_{name}.dart` in
 /// `lib/database/migrations/`.
-class MakeMigrationCommand extends DowelGeneratorCommand {
+class MakeMigrationCommand extends DowelGeneratorCommand
+    with RefusesUnsafeNames {
   final String? _testRoot;
 
   /// Captures `--create` parsed at [handle] time so [getStub] and

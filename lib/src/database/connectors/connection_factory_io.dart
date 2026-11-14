@@ -33,7 +33,12 @@ class ConnectionFactory implements ConnectionFactoryContract {
     // Resolve the full database path
     final String dbPath = p.join(appDir.path, dbName);
 
-    // Open and return the database
-    return sqlite3.open(dbPath);
+    // Open the database. A double-quoted name must stay an identifier, so a
+    // mistyped quoted column fails with "no such column" instead of being
+    // compared as a string literal.
+    final Database db = sqlite3.open(dbPath);
+    db.config.doubleQuotedStringLiterals = false;
+
+    return db;
   }
 }

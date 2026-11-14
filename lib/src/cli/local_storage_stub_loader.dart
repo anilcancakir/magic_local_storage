@@ -12,10 +12,13 @@ import 'dart:io';
 abstract final class LocalStorageStubLoader {
   static const String _packageName = 'magic_local_storage';
 
-  /// This package's root directory as seen from the project at [projectDir],
-  /// or `null` when that project has no package config (pub get has not run)
-  /// or does not depend on this package.
-  static Directory? packageRoot(String projectDir) {
+  /// The root directory of [package] (this package by default) as seen from
+  /// the project at [projectDir], or `null` when that project has no package
+  /// config (pub get has not run) or does not resolve [package].
+  static Directory? packageRoot(
+    String projectDir, {
+    String package = _packageName,
+  }) {
     final Uri toolDir = Directory(projectDir).absolute.uri
         .resolve('.dart_tool/');
     final File config = File.fromUri(toolDir.resolve('package_config.json'));
@@ -27,7 +30,7 @@ abstract final class LocalStorageStubLoader {
     if (packages is! List) return null;
 
     for (final Object? entry in packages) {
-      if (entry is! Map || entry['name'] != _packageName) continue;
+      if (entry is! Map || entry['name'] != package) continue;
       final Object? rootUri = entry['rootUri'];
       if (rootUri is! String) return null;
       // A relative rootUri resolves against the directory holding the config.

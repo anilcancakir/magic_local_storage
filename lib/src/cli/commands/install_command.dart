@@ -23,23 +23,32 @@ import '../local_storage_stub_loader.dart';
 class InstallCommand extends DowelInstallCommand {
   /// [wasmUrl] replaces the GitHub release download, so a test can serve the
   /// file from a loopback server.
-  InstallCommand({Uri? wasmUrl}) : _wasmUrl = wasmUrl ?? sqliteWasmUrl;
+  InstallCommand({this._wasmUrl});
 
-  /// The sqlite3.dart release whose `sqlite3.wasm` is downloaded.
+  /// The sqlite3.dart release downloaded when the project's resolved `sqlite3`
+  /// version cannot be read, see [resolveSqliteRelease].
   ///
-  /// Tracks this package's `sqlite3: ^3.9.0` constraint in `pubspec.yaml`;
-  /// bump the two together. simolus3 ships one wasm per package release, and
-  /// a wasm from another release than the Dart bindings is documented to
-  /// corrupt data at runtime.
+  /// Tracks the lower bound of this package's `sqlite3: ^3.9.1` constraint in
+  /// `pubspec.yaml`; bump the two together. The sqlite3 package needs the
+  /// specially compiled `sqlite3.wasm` from its own GitHub releases, so the
+  /// download comes from the release of the version the project runs.
   static const String sqliteWasmRelease = '3.9.1';
 
   /// Where [sqliteWasmRelease]'s wasm is published.
-  static final Uri sqliteWasmUrl = Uri.parse(
+  static final Uri sqliteWasmUrl = sqliteWasmUrlFor(sqliteWasmRelease);
+
+  /// Where the `sqlite3.wasm` of sqlite3.dart [release] is published.
+  static Uri sqliteWasmUrlFor(String release) => Uri.parse(
     'https://github.com/simolus3/sqlite3.dart/releases/download/'
-    'sqlite3-$sqliteWasmRelease/sqlite3.wasm',
+    'sqlite3-$release/sqlite3.wasm',
   );
 
-  final Uri _wasmUrl;
+  /// Matches a hosted package directory such as `sqlite3-3.9.1`.
+  static final RegExp _hostedSqliteDirectory = RegExp(
+    r'^sqlite3-(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]+)?)$',
+  );
+
+  final Uri? _wasmUrl;
 
   @override
   String get signature => 'local_storage:install $baseFlags';
@@ -71,6 +80,27 @@ class InstallCommand extends DowelInstallCommand {
     if (root == null) return null;
     final File manifest = File.fromUri(root.uri.resolve('install.yaml'));
     return manifest.existsSync() ? manifest.path : null;
+  }
+
+  /// The `sqlite3` version the project resolved, read off the hosted package
+  /// directory in its `.dart_tool/package_config.json`.
+  ///
+  /// Answers [sqliteWasmRelease] when pub get has not run or `sqlite3` comes
+  /// from a path or git dependency, whose directory carries no version.
+  String resolveSqliteRelease() {
+    final Directory? root = LocalStorageStubLoader.packageRoot(
+      projectRoot,
+      package: 'sqlite3',
+    );
+    if (root == null) return sqliteWasmRelease;
+
+    final String directory = root.uri.pathSegments.lastWhere(
+      (segment) => segment.isNotEmpty,
+      orElse: () => '',
+    );
+
+    return _hostedSqliteDirectory.firstMatch(directory)?.group(1) ??
+        sqliteWasmRelease;
   }
 
   @override
@@ -132,18 +162,18 @@ class InstallCommand extends DowelInstallCommand {
       return;
     }
 
-    ctx.output.info(
-      'Downloading sqlite3.wasm ($sqliteWasmRelease) into web/ ...',
-    );
+    final String release = resolveSqliteRelease();
+    final Uri wasmUrl = _wasmUrl ?? sqliteWasmUrlFor(release);
+    ctx.output.info('Downloading sqlite3.wasm ($release) into web/ ...');
     final HttpClient client = HttpClient();
     try {
       // GitHub answers with a redirect to its asset host; getUrl follows it.
-      final HttpClientRequest request = await client.getUrl(_wasmUrl);
+      final HttpClientRequest request = await client.getUrl(wasmUrl);
       final HttpClientResponse response = await request.close();
       if (response.statusCode != HttpStatus.ok) {
         ctx.output.error(
           'sqlite3.wasm download FAILED (HTTP ${response.statusCode}). '
-          'Fix manually: curl -L "$_wasmUrl" -o web/sqlite3.wasm',
+          'Fix manually: curl -L "$wasmUrl" -o web/sqlite3.wasm',
         );
         return;
       }
@@ -162,7 +192,7 @@ class InstallCommand extends DowelInstallCommand {
     } on Exception catch (e) {
       ctx.output.error(
         'sqlite3.wasm download FAILED: $e. '
-        'Fix manually: curl -L "$_wasmUrl" -o web/sqlite3.wasm',
+        'Fix manually: curl -L "$wasmUrl" -o web/sqlite3.wasm',
       );
     } finally {
       client.close(force: true);
