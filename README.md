@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/anilcancakir/magic_local_storage/master/screenshots/logo.png" width="120" alt="Magic Local Storage logo" />
+  <img src="https://raw.githubusercontent.com/anilcancakir/magic_local_storage/master/.github/logo.png" width="120" alt="Magic Local Storage logo" />
 </p>
 
 <h1 align="center">Magic Local Storage</h1>
