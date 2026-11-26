@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **The database opens on an Apple TV.** The native connection factory resolves the database directory through `MagicPaths.appData()` instead of the documents directory, so on tvOS, which denies writes to Documents on a device, the file lives in `app_data` under the cache directory; every other platform still uses the documents directory. The system may purge the cache directory when storage runs low, so keep only rebuildable data in a tvOS database. Needs a `magic` release that ships `MagicPaths`. (`lib/src/database/connectors/connection_factory_io.dart`)
+- **The database opens on an Apple TV.** The native connection factory resolves the database directory through `MagicPaths.appData()` instead of the documents directory, so on tvOS, which denies writes to Documents on a device, the file lives in `app_data` under the cache directory; every other platform still uses the documents directory. The system may purge the cache directory when storage runs low, so keep only rebuildable data in a tvOS database. The package no longer declares `path_provider` itself, since nothing under `lib/` imports it any more. Needs a `magic` release that ships `MagicPaths`. (`lib/src/database/connectors/connection_factory_io.dart`, `pubspec.yaml`)
 
 ### Changed
 

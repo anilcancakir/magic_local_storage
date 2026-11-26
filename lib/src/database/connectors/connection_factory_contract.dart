@@ -8,7 +8,7 @@ import 'package:sqlite3/common.dart';
 ///
 /// ## Implementation Notes
 ///
-/// - **Native (IO)**: Uses `sqlite3.open()` with file path from `path_provider`
+/// - **Native (IO)**: Uses `sqlite3.open()` with file path from `MagicPaths.appData()`
 /// - **Web (WASM)**: Uses `WasmSqlite3` with `IndexedDbFileSystem`
 ///
 /// The correct implementation is automatically selected at compile time using
