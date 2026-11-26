@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The database opens on an Apple TV.** The native connection factory resolves the database directory through `MagicPaths.appData()` instead of the documents directory, so on tvOS, which denies writes to Documents on a device, the file lives in `app_data` under the cache directory; every other platform still uses the documents directory. The system may purge the cache directory when storage runs low, so keep only rebuildable data in a tvOS database. Needs a `magic` release that ships `MagicPaths`. (`lib/src/database/connectors/connection_factory_io.dart`)
+
 ### Changed
 
 - **The README shows the plugin's own logo instead of the Magic logo.** `.github/logo.png`, a 512 pixel PNG of the mark the docs site serves, replaces `.github/magic-logo.svg`. (`README.md`, `.github/`)

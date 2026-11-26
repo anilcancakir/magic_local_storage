@@ -1,7 +1,7 @@
 import 'dart:io';
 
+import 'package:magic/magic.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'connection_factory_contract.dart';
@@ -13,8 +13,10 @@ import 'connection_factory_contract.dart';
 ///
 /// ## File Location
 ///
-/// The database file is stored in the application's documents directory,
-/// which is persistent across app restarts and updates.
+/// The database file is stored in the directory `MagicPaths.appData()` names:
+/// the application's documents directory, which is persistent across app
+/// restarts and updates, or `app_data` under the cache directory on tvOS, where
+/// the system may purge it when storage runs low.
 ///
 /// ## Example
 ///
@@ -27,8 +29,8 @@ class ConnectionFactory implements ConnectionFactoryContract {
   Future<Database> connect(Map<String, dynamic> config) async {
     final dbName = config['database'] as String? ?? 'magic_app.db';
 
-    // Get the application documents directory
-    final Directory appDir = await getApplicationDocumentsDirectory();
+    // Documents everywhere except tvOS, where an Apple TV denies writes to it.
+    final Directory appDir = await MagicPaths.appData();
 
     // Resolve the full database path
     final String dbPath = p.join(appDir.path, dbName);
