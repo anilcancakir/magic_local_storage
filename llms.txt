@@ -2,7 +2,7 @@
 
 > SQLite for Magic apps: the `DB` and `Schema` facades, `Migration` and `Migrator`, `Seeder`, `Factory` and `Seeding.run`, a push-then-pull `SyncFeed`, and the `QueryModelStore` behind every `useLocal` model. `DatabaseServiceProvider` wires it, `make:migration`, `make:seeder` and `make:factory` scaffold it.
 
-**Stack**: Flutter >=3.47.0 · Dart >=3.13.0 · Requires `magic` ^1.0.0 · Runtime deps: `magic`, `sqlite3`, `path_provider`, `path`, `faker`; dowel runs the installer. No mocking library.
+**Stack**: Flutter >=3.47.0 · Dart >=3.13.0 · Requires `magic` ^1.0.0 · Runtime deps: `magic`, `sqlite3`, `path`, `faker`; dowel runs the installer. No mocking library.
 
 **Setup**:
 

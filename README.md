@@ -34,7 +34,7 @@
 | Generators | `make:migration`, `make:seeder`, `make:factory`, `local_storage:install` |
 | Platforms | Android, iOS, macOS, Windows, Linux and web |
 | Requires | Dart >=3.13, Flutter >=3.47, `magic` ^1.0.0; web needs `web/sqlite3.wasm`, which the installer downloads |
-| Dependencies | `magic`, `sqlite3`, `path_provider`, `path`, `faker`; dowel runs the installer |
+| Dependencies | `magic`, `sqlite3`, `path`, `faker`; dowel runs the installer |
 | License | MIT |
 
 ## Install
@@ -261,7 +261,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 
 ## Dependencies
 
-`magic` for the container, `Config`, `Log`, `Http` and the model layer; `sqlite3` for the engine (FFI on native, `sqlite3.wasm` on web); `path_provider` and `path` for the native file location; `faker` for factories; dowel to run the installer through `dart run magic:dowel`.
+`magic` for the container, `Config`, `Log`, `Http` and the model layer; `sqlite3` for the engine (FFI on native, `sqlite3.wasm` on web); `path` and magic's `MagicPaths` for the native file location; `faker` for factories; dowel to run the installer through `dart run magic:dowel`.
 
 ## Links
 

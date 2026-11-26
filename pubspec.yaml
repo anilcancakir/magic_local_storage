@@ -22,7 +22,6 @@ dependencies:
   dowel: ^1.0.0
   faker: ^2.2.0
   path: ^1.9.1
-  path_provider: ^2.1.6
   sqlite3: ^3.9.1
 
 dev_dependencies:
